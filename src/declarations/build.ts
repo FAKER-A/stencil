@@ -44,6 +44,7 @@ export interface BuildCtx {
   scriptsAdded: string[];
   scriptsDeleted: string[];
   hasError: boolean;
+  hasWarning: boolean;
   startTime: number;
   styleBuildCount: number;
   stylesUpdated: BuildStyleUpdate[];

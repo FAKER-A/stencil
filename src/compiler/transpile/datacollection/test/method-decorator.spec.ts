@@ -1,7 +1,15 @@
 import { gatherMetadata } from './test-utils';
 import { getMethodDecoratorMeta } from '../method-decorator';
 import * as path from 'path';
+import { Config } from '../../../../declarations';
+import { mockConfig } from '../../../../testing/mocks';
 
+
+let config: Config;
+
+beforeEach(() => {
+  config = mockConfig();
+});
 
 describe('method decorator', () => {
 
@@ -9,7 +17,7 @@ describe('method decorator', () => {
     let response;
     const sourceFilePath = path.resolve(__dirname, './fixtures/method-example');
     gatherMetadata(sourceFilePath, (checker, classNode, sourceFile) => {
-      response = getMethodDecoratorMeta([], checker, classNode, sourceFile, 'ClassName');
+      response = getMethodDecoratorMeta(config, [], checker, classNode, sourceFile, 'ClassName');
     });
 
     expect(response).toEqual({
@@ -42,7 +50,7 @@ describe('method decorator', () => {
     let response;
     const sourceFilePath = path.resolve(__dirname, './fixtures/method-example-w-export-interface');
     gatherMetadata(sourceFilePath, (checker, classNode, sourceFile) => {
-      response = getMethodDecoratorMeta([], checker, classNode, sourceFile, 'ClassName');
+      response = getMethodDecoratorMeta(config, [], checker, classNode, sourceFile, 'ClassName');
     });
 
     expect(response).toEqual({
@@ -72,7 +80,7 @@ describe('method decorator', () => {
     let response;
     const sourceFilePath = path.resolve(__dirname, './fixtures/method-example-w-external-type-import');
     gatherMetadata(sourceFilePath, (checker, classNode, sourceFile) => {
-      response = getMethodDecoratorMeta([], checker, classNode, sourceFile, 'ClassName');
+      response = getMethodDecoratorMeta(config, [], checker, classNode, sourceFile, 'ClassName');
     });
 
     expect(response).toEqual({
