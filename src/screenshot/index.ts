@@ -1,2 +1,3 @@
 
-export { ScreenshotConnector } from './connectors/screenshot-connector';
+export { startScreenshotServer } from './screenshot-server';
+export { ScreenshotConnector } from './screenshot-connector';

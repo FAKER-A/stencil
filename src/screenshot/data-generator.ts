@@ -1,4 +1,4 @@
-import * as d from '../../declarations';
+import * as d from '../declarations';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -144,12 +144,17 @@ async function runScreenshotScreenshotConnector(config: d.Config, connectorModul
 
     const connector: d.ScreenshotConnector = new ScreenshotConnector();
 
-    if (typeof connector.generate === 'function') {
+    if (typeof connector.postSnapshot === 'function') {
       const timespan = config.logger.createTimeSpan(`update screenshot data started`);
 
-      await connector.generate(snapshot);
+      await connector.postSnapshot(snapshot);
 
       timespan.finish(`updating screenshot data finished`);
+
+      if (typeof connector.startServer === 'function') {
+        const server = await connector.startServer();
+        config.logger.info(`screenshots: ${config.logger.magenta(server.url)}`);
+      }
     }
 
   } catch (e) {

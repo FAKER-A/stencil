@@ -1,4 +1,5 @@
-import * as d from '../../declarations';
+import { startScreenshotServer } from './screenshot-server';
+import * as d from '../declarations';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -17,7 +18,11 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
   imagesDir: string;
   snapshotDataDir: string;
 
-  async generate(results: d.E2ESnapshot) {
+  startServer(): Promise<d.ScreenshotServer> {
+    return startScreenshotServer(this);
+  }
+
+  async postSnapshot(results: d.E2ESnapshot) {
     this.results = results;
 
     await this.createDirs();
@@ -94,39 +99,58 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
   }
 
   async updateData() {
+    try {
+      const previousAppData = await this.getData();
+
+      previousAppData.snapshots = previousAppData.snapshots || [];
+      previousAppData.snapshots.push(formatSnapshotData(this.results));
+      previousAppData.snapshots.sort(sortSnapshots);
+
+      await this.writeData(previousAppData);
+
+    } catch (e) {
+      await this.generateData();
+    }
+  }
+
+  async getData() {
+    const appDataJsonFilePath = path.join(this.dataDir, this.appDataFileName);
+    let data: d.E2EData = null;
+
+    try {
+      const dataContent = await this.readFile(appDataJsonFilePath);
+      data = JSON.parse(dataContent);
+
+    } catch (e) {}
+
+    return data;
+  }
+
+  async writeData(data: d.E2EData) {
+    const appDataJsonFilePath = path.join(this.dataDir, this.appDataFileName);
+
+    try {
+      await this.writeFile(appDataJsonFilePath, JSON.stringify(data));
+
+    } catch (e) {}
+
+    return data;
+  }
+
+  async generateData() {
     const snapshots = await this.getAllSnapshotData();
 
     const appData: d.E2EData = {
       appName: this.results.appName,
       masterSnapshotId: null,
-      snapshots: snapshots.map(snapshot => {
-        const abbrSnapshotData: d.E2ESnapshot = {
-          id: snapshot.id,
-          desc: snapshot.desc || '',
-          commitUrl: snapshot.commitUrl || '',
-          timestamp: snapshot.timestamp
-        };
-        return abbrSnapshotData
-      })
+      snapshots: snapshots.map(formatSnapshotData)
     };
 
-    appData.snapshots.sort((a, b) => {
-      if (a.timestamp > b.timestamp) return -1;
-      if (a.timestamp < b.timestamp) return 1;
-      return 0;
-    });
+    appData.snapshots.sort(sortSnapshots);
 
     const appDataJsonFilePath = path.join(this.dataDir, this.appDataFileName);
 
-    try {
-      const previousAppDataContent = await this.readFile(appDataJsonFilePath);
-      const previousAppData = JSON.parse(previousAppDataContent) as d.E2EData;
-
-      appData.masterSnapshotId = previousAppData.masterSnapshotId;
-
-    } catch (e) {}
-
-    if (!appData.masterSnapshotId && appData.snapshots.length > 0) {
+    if (appData.snapshots.length > 0) {
       appData.masterSnapshotId = appData.snapshots[0].id;
     }
 
@@ -134,10 +158,16 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
   }
 
   async getAllSnapshotData() {
-    const snapshotJsonFileNames = await this.getSnapshotFileNames();
+    let snapshotJsonFileNames = await this.getSnapshotFileNames();
 
-    const snapshots = snapshotJsonFileNames.map(async snapshotJsonFileName => {
-      return await this.getSnapshotData(snapshotJsonFileName);
+    const snapshotIds = snapshotJsonFileNames.filter(fileName => {
+      return (fileName.endsWith('.json'));
+    }).map(snapshotJsonFileName => {
+      return snapshotJsonFileName.split('.')[0];
+    });
+
+    const snapshots = snapshotIds.map(async snapshotId => {
+      return await this.getSnapshotData(snapshotId);
     });
 
     return Promise.all(snapshots);
@@ -147,8 +177,9 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     return await this.readDir(this.snapshotDataDir);
   }
 
-  async getSnapshotData(snapshotJsonFileName: string) {
+  async getSnapshotData(snapshotId: string) {
     let snapshotJsonContent: string;
+    const snapshotJsonFileName = `${snapshotId}.json`;
 
     const cachedFilePath = path.join(this.results.dataDir, snapshotJsonFileName);
 
@@ -167,6 +198,37 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     return parsedData;
   }
 
+  async deleteSnapshot(snapshotId: string) {
+    const data = await this.getData();
+
+    if (data && data.snapshots) {
+      if (data.masterSnapshotId === snapshotId) {
+        return data;
+      }
+
+      data.snapshots = data.snapshots.filter(s => s.id !== snapshotId);
+    }
+
+    return this.writeData(data);
+  }
+
+  async setMasterSnapshot(snapshotId: string) {
+    const data = await this.getData();
+
+    if (data) {
+      if (!data.snapshots.some(s => s.id === snapshotId)) {
+        return data;
+      }
+      data.masterSnapshotId = snapshotId;
+    }
+
+    return this.writeData(data);
+  }
+
+  readImage(imageFileName: string) {
+    const imageFilePath = path.join(this.imagesDir, imageFileName);
+    return fs.createReadStream(imageFilePath);
+  }
 
   readDir(dirPath: string) {
     return readDir(dirPath);
@@ -196,7 +258,7 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     return stat(itemPath);
   }
 
-  deleteItem(filePath: string) {
+  deleteFile(filePath: string) {
     return deleteFile(filePath);
   }
 
@@ -204,47 +266,23 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     return deleteDir(dirPath)
   }
 
-  async deleteDirRecursive(dirPath: string) {
-    const dirItems = await readDir(dirPath);
-
-    const deletes = dirItems.map(async itemName => {
-      const itemPath = path.join(dirPath, itemName);
-
-      const stat = await this.stat(itemPath);
-      if (stat.isFile) {
-        await this.deleteItem(itemPath);
-      } else if (stat.isDirectory) {
-        await this.deleteDirRecursive(itemPath);
-      }
-    });
-
-    await Promise.all(deletes);
-
-    await this.deleteDir(dirPath);
-  }
-
-  async copyDir(srcDirPath: string, destDirPath: string) {
-    const srcDirItems = await readDir(srcDirPath);
-
-    const copies = srcDirItems.map(async itemName => {
-      const srcItemPath = path.join(srcDirPath, itemName);
-      const destItemPath = path.join(destDirPath, itemName);
-
-      const stat = await this.stat(srcItemPath);
-      if (stat.isFile) {
-        await this.copyFile(srcItemPath, destItemPath);
-
-      } else if (stat.isDirectory) {
-        await this.mkDir(destItemPath);
-        await this.copyDir(srcItemPath, destItemPath);
-      }
-    });
-
-    await Promise.all(copies);
-  }
-
 }
 
+function formatSnapshotData(results: d.E2ESnapshot) {
+  const snapshotData: d.E2ESnapshot = {
+    id: results.id,
+    desc: results.desc || '',
+    commitUrl: results.commitUrl || '',
+    timestamp: results.timestamp
+  };
+  return snapshotData
+}
+
+function sortSnapshots(a: d.E2ESnapshot, b: d.E2ESnapshot) {
+  if (a.timestamp > b.timestamp) return -1;
+  if (a.timestamp < b.timestamp) return 1;
+  return 0;
+}
 
 async function readDir(dirPath: string) {
   return new Promise<string[]>((resolve, reject) => {

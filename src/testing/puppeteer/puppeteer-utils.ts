@@ -9,7 +9,7 @@ export class FindTestElement implements pd.FindTestElement {
     this.handlePromise = page.$(lightDomSelector);
   }
 
-  shadow(shadowRootSelector: string) {
+  findInShadow(shadowRootSelector: string) {
     return new ShadowDomElementUtils(this.page, this.handlePromise, shadowRootSelector);
   }
 

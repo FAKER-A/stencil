@@ -1,5 +1,5 @@
 import * as d from '../../declarations';
-import { writeE2EScreenshot } from '../../screenshot/generator/data-generator';
+import { writeE2EScreenshot } from '../../screenshot/data-generator';
 import * as pd from './puppeteer-declarations';
 import * as puppeteer from 'puppeteer';
 

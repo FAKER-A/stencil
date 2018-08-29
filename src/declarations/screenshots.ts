@@ -35,5 +35,15 @@ export interface E2EScreenshot {
 
 
 export interface ScreenshotConnector {
-  generate(snapshot: E2ESnapshot): Promise<void>;
+  deleteSnapshot(snapshotId: string): Promise<E2EData>;
+  getData(): Promise<E2EData>;
+  getSnapshotData(snapshotId: string): Promise<E2ESnapshot>;
+  postSnapshot(snapshot: E2ESnapshot): Promise<void>;
+  readImage(imageFileName: string): any;
+  setMasterSnapshot(snapshotId: string): Promise<E2EData>;
+  startServer(): Promise<ScreenshotServer>;
+}
+
+export interface ScreenshotServer {
+  url: string;
 }

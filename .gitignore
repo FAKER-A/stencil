@@ -22,8 +22,12 @@ node_modules/
 /polyfills
 /server
 /sys
-/screenshot
 /testing
+
+/screenshot/app/screenshot/
+/screenshot/index.js
+/screenshot/package.json
+/screenshot/screenshot.connector.default.js
 
 test/e2e/app/components.d.ts
 

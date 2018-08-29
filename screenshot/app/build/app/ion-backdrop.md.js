@@ -1,0 +1,1572 @@
+/*! Built with http://stenciljs.com */
+const { h } = window.App;
+
+import { b as now, c as hasShadowDom, d as assert, e as deferEvent } from './chunk-9cb229af.js';
+import { c as openURL, b as createColorClasses, e as hostContext } from './chunk-f7b6af08.js';
+
+class Backdrop {
+    constructor() {
+        this.lastClick = -10000;
+        /**
+         * If true, the backdrop will be visible. Defaults to `true`.
+         */
+        this.visible = true;
+        /**
+         * If true, the backdrop will can be clicked and will emit the `ionBackdropTap` event. Defaults to `true`.
+         */
+        this.tappable = true;
+        /**
+         * If true, the backdrop will stop propagation on tap. Defaults to `true`.
+         */
+        this.stopPropagation = true;
+    }
+    componentDidLoad() {
+        registerBackdrop(this.doc, this);
+    }
+    componentDidUnload() {
+        unregisterBackdrop(this.doc, this);
+    }
+    onTouchStart(ev) {
+        this.lastClick = now(ev);
+        this.emitTap(ev);
+    }
+    onMouseDown(ev) {
+        if (this.lastClick < now(ev) - 2500) {
+            this.emitTap(ev);
+        }
+    }
+    emitTap(ev) {
+        if (this.stopPropagation) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+        if (this.tappable) {
+            this.ionBackdropTap.emit();
+        }
+    }
+    hostData() {
+        return {
+            tabindex: "-1",
+            class: {
+                "backdrop-hide": !this.visible,
+                "backdrop-no-tappable": !this.tappable,
+            }
+        };
+    }
+    static get is() { return "ion-backdrop"; }
+    static get encapsulation() { return "shadow"; }
+    static get properties() {
+        return {
+            "doc": {
+                "context": "document"
+            },
+            "stopPropagation": {
+                "type": Boolean,
+                "attr": "stop-propagation"
+            },
+            "tappable": {
+                "type": Boolean,
+                "attr": "tappable"
+            },
+            "visible": {
+                "type": Boolean,
+                "attr": "visible"
+            }
+        };
+    }
+    static get events() {
+        return [{
+                "name": "ionBackdropTap",
+                "method": "ionBackdropTap",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }];
+    }
+    static get listeners() {
+        return [{
+                "name": "touchstart",
+                "method": "onTouchStart",
+                "capture": true
+            }, {
+                "name": "mousedown",
+                "method": "onMouseDown",
+                "capture": true
+            }];
+    }
+    static get style() { return ":host {\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  display: block;\n  position: absolute;\n  -webkit-transform: translateZ(0);\n  transform: translateZ(0);\n  contain: strict;\n  cursor: pointer;\n  opacity: .01;\n  -ms-touch-action: none;\n  touch-action: none;\n  z-index: 2; }\n  :host.backdrop-hide {\n    background: transparent; }\n  :host.backdrop-no-tappable {\n    cursor: auto; }\n\nbody.backdrop-no-scroll {\n  overflow: hidden; }\n\n:host {\n  background-color: var(--ion-backdrop-color, #000); }"; }
+    static get styleMode() { return "md"; }
+}
+const BACKDROP_NO_SCROLL = "backdrop-no-scroll";
+const activeBackdrops = new Set();
+function registerBackdrop(doc, backdrop) {
+    activeBackdrops.add(backdrop);
+    doc.body.classList.add(BACKDROP_NO_SCROLL);
+}
+function unregisterBackdrop(doc, backdrop) {
+    activeBackdrops.delete(backdrop);
+    if (activeBackdrops.size === 0) {
+        doc.body.classList.remove(BACKDROP_NO_SCROLL);
+    }
+}
+
+class Button {
+    constructor() {
+        this.keyFocus = false;
+        /**
+         * The type of button.
+         * Possible values are: `"button"`, `"bar-button"`.
+         */
+        this.buttonType = "button";
+        /**
+         * If true, the user cannot interact with the button. Defaults to `false`.
+         */
+        this.disabled = false;
+        /**
+         * If true, activates a button with a heavier font weight.
+         */
+        this.strong = false;
+        /**
+         * The type of the button.
+         * Possible values are: `"submit"`, `"reset"` and `"button"`.
+         * Default value is: `"button"`
+         */
+        this.type = "button";
+    }
+    componentWillLoad() {
+        if (this.fill === undefined) {
+            this.fill = this.el.closest("ion-buttons") ? "clear" : "solid";
+        }
+    }
+    onFocus() {
+        this.ionFocus.emit();
+    }
+    onKeyUp() {
+        this.keyFocus = true;
+    }
+    onBlur() {
+        this.keyFocus = false;
+        this.ionBlur.emit();
+    }
+    onClick(ev) {
+        if (this.type === "button") {
+            openURL(this.win, this.href, ev, this.routerDirection);
+        }
+        else if (hasShadowDom(this.el)) {
+            // this button wants to specifically submit a form
+            // climb up the dom to see if we're in a <form>
+            // and if so, then use JS to submit it
+            const form = this.el.closest("form");
+            if (form) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                const fakeButton = document.createElement("button");
+                fakeButton.type = this.type;
+                fakeButton.style.display = "none";
+                form.appendChild(fakeButton);
+                fakeButton.click();
+                fakeButton.remove();
+            }
+        }
+    }
+    hostData() {
+        const { buttonType, color, expand, fill, mode, shape, size, strong } = this;
+        return {
+            class: Object.assign({}, getButtonClassMap(buttonType, mode), getButtonTypeClassMap(buttonType, expand, mode), getButtonTypeClassMap(buttonType, size, mode), getButtonTypeClassMap(buttonType, shape, mode), getButtonTypeClassMap(buttonType, strong ? "strong" : undefined, mode), getColorClassMap(buttonType, color, fill, mode), { "focused": this.keyFocus }),
+            "ion-activable": true,
+        };
+    }
+    render() {
+        const TagType = this.href ? "a" : "button";
+        const attrs = (TagType === "button")
+            ? { type: this.type }
+            : { href: this.href };
+        return (h(TagType, Object.assign({}, attrs, { class: "button-native", disabled: this.disabled, onFocus: this.onFocus.bind(this), onKeyUp: this.onKeyUp.bind(this), onBlur: this.onBlur.bind(this), onClick: this.onClick.bind(this) }), h("span", { class: "button-inner" }, h("slot", { name: "icon-only" }), h("slot", { name: "start" }), h("slot", null), h("slot", { name: "end" })), this.mode === "md" && h("ion-ripple-effect", null)));
+    }
+    static get is() { return "ion-button"; }
+    static get encapsulation() { return "shadow"; }
+    static get properties() {
+        return {
+            "buttonType": {
+                "type": String,
+                "attr": "button-type",
+                "mutable": true
+            },
+            "color": {
+                "type": String,
+                "attr": "color"
+            },
+            "disabled": {
+                "type": Boolean,
+                "attr": "disabled",
+                "reflectToAttr": true
+            },
+            "el": {
+                "elementRef": true
+            },
+            "expand": {
+                "type": String,
+                "attr": "expand",
+                "reflectToAttr": true
+            },
+            "fill": {
+                "type": String,
+                "attr": "fill",
+                "reflectToAttr": true,
+                "mutable": true
+            },
+            "href": {
+                "type": String,
+                "attr": "href"
+            },
+            "keyFocus": {
+                "state": true
+            },
+            "mode": {
+                "type": String,
+                "attr": "mode"
+            },
+            "routerDirection": {
+                "type": String,
+                "attr": "router-direction"
+            },
+            "shape": {
+                "type": String,
+                "attr": "shape",
+                "reflectToAttr": true
+            },
+            "size": {
+                "type": String,
+                "attr": "size",
+                "reflectToAttr": true
+            },
+            "strong": {
+                "type": Boolean,
+                "attr": "strong"
+            },
+            "type": {
+                "type": String,
+                "attr": "type"
+            },
+            "win": {
+                "context": "window"
+            }
+        };
+    }
+    static get events() {
+        return [{
+                "name": "ionFocus",
+                "method": "ionFocus",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionBlur",
+                "method": "ionBlur",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }];
+    }
+    static get style() { return ":host {\n  --ion-color-base: var(--ion-color-primary, #3880ff);\n  --ion-color-contrast: var(--ion-color-primary-contrast, #fff);\n  --ion-color-shade: var(--ion-color-primary-shade, #3171e0);\n  --overflow: hidden;\n  --ripple-color: currentColor;\n  display: inline-block;\n  font-family: var(--ion-font-family, inherit);\n  text-align: center;\n  text-decoration: none;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  vertical-align: top;\n  vertical-align: -webkit-baseline-middle;\n  -webkit-font-kerning: none;\n  font-kerning: none; }\n\n:host([disabled]) {\n  pointer-events: none; }\n\n:host(.button-solid) {\n  --background: var(--ion-color-base);\n  color: var(--ion-color-contrast); }\n\n:host(.button-outline) {\n  --border-color: var(--ion-color-base);\n  --background: transparent;\n  color: var(--ion-color-base); }\n\n:host(.button-clear) {\n  --border-width: 0;\n  --background: transparent;\n  color: var(--ion-color-base); }\n\n:host(.button-block) {\n  display: block; }\n\n:host(.button-block) .button-native {\n  margin-left: 0;\n  margin-right: 0;\n  display: block;\n  width: 100%;\n  clear: both;\n  contain: strict; }\n\n:host(.button-block) .button-native::after {\n  clear: both; }\n\n:host(.button-full) {\n  display: block; }\n\n:host(.button-full) .button-native {\n  margin-left: 0;\n  margin-right: 0;\n  display: block;\n  width: 100%;\n  contain: strict; }\n\n:host(.button-full:not(.button-round)) .button-native {\n  border-radius: 0;\n  border-right-width: 0;\n  border-left-width: 0; }\n\n.button-native {\n  font-family: inherit;\n  font-size: inherit;\n  font-style: inherit;\n  font-weight: inherit;\n  letter-spacing: inherit;\n  text-decoration: inherit;\n  text-overflow: inherit;\n  text-transform: inherit;\n  text-align: inherit;\n  white-space: inherit;\n  color: inherit;\n  border-radius: var(--border-radius);\n  -moz-osx-font-smoothing: grayscale;\n  -webkit-font-smoothing: antialiased;\n  margin: var(--margin-top) var(--margin-end) var(--margin-bottom) var(--margin-start);\n  padding: var(--padding-top) var(--padding-end) var(--padding-bottom) var(--padding-start);\n  display: block;\n  position: relative;\n  height: var(--height);\n  -webkit-transition: var(--transition);\n  transition: var(--transition);\n  border-width: var(--border-width);\n  border-style: var(--border-style);\n  border-color: var(--border-color);\n  outline: none;\n  background: var(--background);\n  line-height: 1;\n  -webkit-box-shadow: var(--box-shadow);\n  box-shadow: var(--box-shadow);\n  contain: content;\n  cursor: pointer;\n  opacity: var(--opacity);\n  overflow: var(--overflow);\n  z-index: 0;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none; }\n\n.button-native[disabled] {\n  cursor: default;\n  opacity: .5;\n  pointer-events: none; }\n\n.button-inner {\n  display: -webkit-box;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-orient: horizontal;\n  -webkit-box-direction: normal;\n  -ms-flex-flow: row nowrap;\n  flex-flow: row nowrap;\n  -ms-flex-negative: 0;\n  flex-shrink: 0;\n  -webkit-box-align: center;\n  -ms-flex-align: center;\n  align-items: center;\n  -webkit-box-pack: center;\n  -ms-flex-pack: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%; }\n\n::slotted(ion-icon) {\n  font-size: 1.4em;\n  pointer-events: none; }\n\n::slotted(ion-icon[slot=\"start\"]) {\n  margin: 0 0.3em 0 -0.3em; }\n\n::slotted(ion-icon[slot=\"end\"]) {\n  margin: 0 -0.2em 0 0.3em; }\n\n::slotted(ion-icon[slot=\"icon-only\"]) {\n  font-size: 1.8em; }\n\nion-ripple-effect {\n  color: var(--ripple-color); }\n\n:host {\n  --transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 300ms cubic-bezier(0.4, 0, 0.2, 1), color 300ms cubic-bezier(0.4, 0, 0.2, 1);\n  --border-radius: 2px;\n  --margin-top: 4px;\n  --margin-bottom: 4px;\n  --margin-start: 2px;\n  --margin-end: 2px;\n  --padding-top: 0;\n  --padding-bottom: 0;\n  --padding-start: 1.1em;\n  --padding-end: 1.1em;\n  --height: 36px;\n  font-size: 14px;\n  font-weight: 500;\n  letter-spacing: 0;\n  text-transform: uppercase; }\n\n:host(.button-solid) {\n  --box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.12); }\n\n:host(.button-solid.activated) {\n  --box-shadow: 0 3px 5px rgba(0, 0, 0, 0.14), 0 3px 5px rgba(0, 0, 0, 0.21);\n  --background: var(--ion-color-shade); }\n\n:host(.button-outline) {\n  --border-width: 1px;\n  --border-style: solid;\n  --box-shadow: none; }\n\n:host(.button-outline.activated) {\n  --background: transparent; }\n\n:host(.button-outline.focused) {\n  --background: rgba(var(--ion-color-base-rgb), 0.1); }\n\n:host(.button-clear) {\n  --opacity: 1; }\n\n:host(.button-round) {\n  --border-radius: 64px;\n  --padding-top: 0;\n  --padding-start: 26px;\n  --padding-end: 26px;\n  --padding-bottom: 0; }\n\n:host(.button-large) {\n  --padding-top: 0;\n  --padding-start: 1em;\n  --padding-end: 1em;\n  --padding-bottom: 0;\n  --height: 2.8em;\n  font-size: 20px; }\n\n:host(.button-small) {\n  --padding-top: 0;\n  --padding-start: 0.9em;\n  --padding-end: 0.9em;\n  --padding-bottom: 0;\n  --height: 2.1em;\n  font-size: 13px; }\n\n:host(.button-strong) {\n  font-weight: bold; }\n\n::slotted(ion-icon[slot=\"icon-only\"]) {\n  padding: 0; }"; }
+    static get styleMode() { return "md"; }
+}
+/**
+ * Get the classes based on the button type
+ * e.g. alert-button, action-sheet-button
+ */
+function getButtonClassMap(buttonType, mode) {
+    if (!buttonType) {
+        return {};
+    }
+    return {
+        [buttonType]: true,
+        [`${buttonType}-${mode}`]: true
+    };
+}
+/**
+ * Get the classes based on the type
+ * e.g. block, full, round, large
+ */
+function getButtonTypeClassMap(buttonType, type, mode) {
+    if (!type) {
+        return {};
+    }
+    type = type.toLocaleLowerCase();
+    return {
+        [`${buttonType}-${type}`]: true,
+        [`${buttonType}-${type}-${mode}`]: true
+    };
+}
+function getColorClassMap(buttonType, color, fill, mode) {
+    let className = buttonType;
+    if (fill) {
+        className += `-${fill.toLowerCase()}`;
+    }
+    const map = {
+        [className]: true,
+        [`${className}-${mode}`]: true,
+    };
+    if (color) {
+        map[`ion-color-${color}`] = true;
+    }
+    return map;
+}
+
+const iosTransitionAnimation = () => import("./ios.transition.js");
+const mdTransitionAnimation = () => import("./md.transition.js");
+function transition(opts) {
+    return new Promise((resolve, reject) => {
+        opts.queue.write(() => {
+            beforeTransition(opts);
+            runTransition(opts).then(result => {
+                if (result.animation) {
+                    result.animation.destroy();
+                }
+                afterTransition(opts);
+                resolve(result);
+            }, error => {
+                afterTransition(opts);
+                reject(error);
+            });
+        });
+    });
+}
+function beforeTransition(opts) {
+    const enteringEl = opts.enteringEl;
+    const leavingEl = opts.leavingEl;
+    setZIndex(enteringEl, leavingEl, opts.direction);
+    if (opts.showGoBack) {
+        enteringEl.classList.add('can-go-back');
+    }
+    else {
+        enteringEl.classList.remove('can-go-back');
+    }
+    setPageHidden(enteringEl, false);
+    if (leavingEl) {
+        setPageHidden(leavingEl, false);
+    }
+}
+async function runTransition(opts) {
+    const animationBuilder = await getAnimationBuilder(opts);
+    const ani = (animationBuilder)
+        ? animation(animationBuilder, opts)
+        : noAnimation(opts); // fast path for no animation
+    return ani;
+}
+async function afterTransition(opts) {
+    const enteringEl = opts.enteringEl;
+    const leavingEl = opts.leavingEl;
+    if (enteringEl) {
+        enteringEl.classList.remove('ion-page-invisible');
+    }
+    if (leavingEl) {
+        leavingEl.classList.remove('ion-page-invisible');
+    }
+}
+async function getAnimationBuilder(opts) {
+    if (!opts.leavingEl || opts.animated === false || opts.duration === 0) {
+        return undefined;
+    }
+    if (opts.animationBuilder) {
+        return opts.animationBuilder;
+    }
+    const builder = (opts.mode === 'ios')
+        ? (await iosTransitionAnimation()).iosTransitionAnimation
+        : (await mdTransitionAnimation()).mdTransitionAnimation;
+    return builder;
+}
+async function animation(animationBuilder, opts) {
+    await waitForReady(opts, true);
+    const trns = await opts.animationCtrl.create(animationBuilder, opts.baseEl, opts);
+    fireWillEvents(opts.window, opts.enteringEl, opts.leavingEl);
+    await playTransition(trns, opts);
+    if (trns.hasCompleted) {
+        fireDidEvents(opts.window, opts.enteringEl, opts.leavingEl);
+    }
+    return {
+        hasCompleted: trns.hasCompleted,
+        animation: trns
+    };
+}
+async function noAnimation(opts) {
+    const enteringEl = opts.enteringEl;
+    const leavingEl = opts.leavingEl;
+    await waitForReady(opts, false);
+    fireWillEvents(opts.window, enteringEl, leavingEl);
+    fireDidEvents(opts.window, enteringEl, leavingEl);
+    return {
+        hasCompleted: true
+    };
+}
+async function waitForReady(opts, defaultDeep) {
+    const deep = opts.deepWait != null ? opts.deepWait : defaultDeep;
+    const promises = deep ? [
+        deepReady(opts.enteringEl),
+        deepReady(opts.leavingEl),
+    ] : [
+        shallowReady(opts.enteringEl),
+        shallowReady(opts.leavingEl),
+    ];
+    await Promise.all(promises);
+    await notifyViewReady(opts.viewIsReady, opts.enteringEl);
+}
+async function notifyViewReady(viewIsReady, enteringEl) {
+    if (viewIsReady) {
+        await viewIsReady(enteringEl);
+    }
+}
+function playTransition(trans, opts) {
+    const progressCallback = opts.progressCallback;
+    const promise = new Promise(resolve => trans.onFinish(resolve));
+    // cool, let's do this, start the transition
+    if (progressCallback) {
+        // this is a swipe to go back, just get the transition progress ready
+        // kick off the swipe animation start
+        trans.progressStart();
+        progressCallback(trans);
+    }
+    else {
+        // only the top level transition should actually start "play"
+        // kick it off and let it play through
+        // ******** DOM WRITE ****************
+        trans.play();
+    }
+    // create a callback for when the animation is done
+    return promise;
+}
+function fireWillEvents(win, enteringEl, leavingEl) {
+    lifecycle(win, leavingEl, "ionViewWillLeave" /* WillLeave */);
+    lifecycle(win, enteringEl, "ionViewWillEnter" /* WillEnter */);
+}
+function fireDidEvents(win, enteringEl, leavingEl) {
+    lifecycle(win, enteringEl, "ionViewDidEnter" /* DidEnter */);
+    lifecycle(win, leavingEl, "ionViewDidLeave" /* DidLeave */);
+}
+function lifecycle(win, el, eventName) {
+    if (el) {
+        const CEvent = win.CustomEvent;
+        const event = new CEvent(eventName, {
+            bubbles: false,
+            cancelable: false,
+        });
+        el.dispatchEvent(event);
+    }
+}
+function shallowReady(el) {
+    if (el && el.componentOnReady) {
+        return el.componentOnReady();
+    }
+    return Promise.resolve();
+}
+async function deepReady(el) {
+    const element = el;
+    if (element) {
+        if (element.componentOnReady) {
+            const stencilEl = await element.componentOnReady();
+            if (stencilEl) {
+                return;
+            }
+        }
+        await Promise.all(Array.from(element.children).map(deepReady));
+    }
+}
+function setPageHidden(el, hidden) {
+    if (hidden) {
+        el.setAttribute('aria-hidden', 'true');
+        el.classList.add('ion-page-hidden');
+    }
+    else {
+        el.hidden = false;
+        el.removeAttribute('aria-hidden');
+        el.classList.remove('ion-page-hidden');
+    }
+}
+function setZIndex(enteringEl, leavingEl, direction) {
+    if (enteringEl) {
+        enteringEl.style.zIndex = (direction === 'back')
+            ? '99'
+            : '101';
+    }
+    if (leavingEl) {
+        leavingEl.style.zIndex = '100';
+    }
+}
+
+async function attachComponent(delegate, container, component, cssClasses, componentProps) {
+    if (delegate) {
+        return delegate.attachViewToDom(container, component, componentProps, cssClasses);
+    }
+    if (typeof component !== 'string' && !(component instanceof HTMLElement)) {
+        throw new Error('framework delegate is missing');
+    }
+    const el = (typeof component === 'string')
+        ? container.ownerDocument.createElement(component)
+        : component;
+    if (cssClasses) {
+        cssClasses.forEach(c => el.classList.add(c));
+    }
+    if (componentProps) {
+        Object.assign(el, componentProps);
+    }
+    container.appendChild(el);
+    if (el.componentOnReady) {
+        await el.componentOnReady();
+    }
+    return el;
+}
+
+class ViewController {
+    constructor(component, params) {
+        this.component = component;
+        this.params = params;
+        this.state = 1 /* New */;
+    }
+    /**
+     * @hidden
+     */
+    async init(container) {
+        this.state = 2 /* Attached */;
+        if (!this.element) {
+            const component = this.component;
+            this.element = await attachComponent(this.delegate, container, component, ['ion-page', 'ion-page-invisible'], this.params);
+        }
+    }
+    /**
+     * @hidden
+     * DOM WRITE
+     */
+    _destroy() {
+        assert(this.state !== 3 /* Destroyed */, 'view state must be ATTACHED');
+        const element = this.element;
+        if (element) {
+            if (this.delegate) {
+                this.delegate.removeViewFromDom(element.parentElement, element);
+            }
+            else {
+                element.remove();
+            }
+        }
+        this.nav = undefined;
+        this.state = 3 /* Destroyed */;
+    }
+}
+function matches(view, id, params) {
+    if (!view) {
+        return false;
+    }
+    if (view.component !== id) {
+        return false;
+    }
+    const currentParams = view.params;
+    const null1 = (currentParams == null);
+    const null2 = (params == null);
+    if (currentParams === params) {
+        return true;
+    }
+    if (null1 !== null2) {
+        return false;
+    }
+    if (null1 && null2) {
+        return true;
+    }
+    const keysA = Object.keys(currentParams);
+    const keysB = Object.keys(params);
+    if (keysA.length !== keysB.length) {
+        return false;
+    }
+    // Test for A's keys different from B.
+    for (const key of keysA) {
+        if (currentParams[key] !== params[key]) {
+            return false;
+        }
+    }
+    return true;
+}
+function convertToView(page, params) {
+    if (!page) {
+        return null;
+    }
+    if (page instanceof ViewController) {
+        return page;
+    }
+    return new ViewController(page, params);
+}
+function convertToViews(pages) {
+    return pages.map(page => {
+        if (page instanceof ViewController) {
+            return page;
+        }
+        if ('page' in page) {
+            return convertToView(page.page, page.params);
+        }
+        return convertToView(page, undefined);
+    }).filter(v => v !== null);
+}
+
+class Nav {
+    constructor() {
+        this.transInstr = [];
+        this.useRouter = false;
+        this.isTransitioning = false;
+        this.destroyed = false;
+        this.views = [];
+        /**
+         * If the nav should animate the components or not
+         */
+        this.animated = true;
+    }
+    swipeGestureChanged() {
+        if (this.gesture) {
+            this.gesture.setDisabled(!this.swipeGesture);
+        }
+    }
+    rootChanged() {
+        if (this.root) {
+            if (!this.useRouter) {
+                this.setRoot(this.root, this.rootParams);
+            }
+            else {
+                console.warn("<ion-nav> does not support a root attribute when using ion-router.");
+            }
+        }
+    }
+    componentWillLoad() {
+        this.useRouter =
+            !!this.win.document.querySelector("ion-router") &&
+                !this.el.closest("[no-router]");
+        if (this.swipeGesture === undefined) {
+            this.swipeGesture = this.config.getBoolean("swipeBackEnabled", this.mode === "ios");
+        }
+        this.ionNavWillLoad.emit();
+    }
+    async componentDidLoad() {
+        this.rootChanged();
+        this.gesture = (await import("./gesture.js")).createGesture({
+            el: this.win.document.body,
+            queue: this.queue,
+            gestureName: "goback-swipe",
+            gesturePriority: 30,
+            threshold: 10,
+            canStart: this.canStart.bind(this),
+            onStart: this.onStart.bind(this),
+            onMove: this.onMove.bind(this),
+            onEnd: this.onEnd.bind(this),
+        });
+        this.swipeGestureChanged();
+    }
+    componentDidUnload() {
+        for (const view of this.views) {
+            lifecycle(this.win, view.element, "ionViewWillUnload" /* WillUnload */);
+            view._destroy();
+        }
+        if (this.gesture) {
+            this.gesture.destroy();
+        }
+        // release swipe back gesture and transition
+        if (this.sbTrns) {
+            this.sbTrns.destroy();
+        }
+        this.transInstr.length = this.views.length = 0;
+        this.sbTrns = undefined;
+        this.destroyed = true;
+    }
+    /**
+     * Push a new component onto the current navigation stack. Pass any aditional information along as an object. This additional information is accessible through NavParams
+     */
+    push(component, componentProps, opts, done) {
+        return this.queueTrns({
+            insertStart: -1,
+            insertViews: [{ page: component, params: componentProps }],
+            opts
+        }, done);
+    }
+    /**
+     * Inserts a component into the nav stack at the specified index. This is useful if you need to add a component at any point in your navigation stack.
+     */
+    insert(insertIndex, component, componentProps, opts, done) {
+        return this.queueTrns({
+            insertStart: insertIndex,
+            insertViews: [{ page: component, params: componentProps }],
+            opts
+        }, done);
+    }
+    /**
+     * Inserts an array of components into the nav stack at the specified index. The last component in the array will become instantiated as a view, and animate in to become the active view.
+     */
+    insertPages(insertIndex, insertComponents, opts, done) {
+        return this.queueTrns({
+            insertStart: insertIndex,
+            insertViews: insertComponents,
+            opts
+        }, done);
+    }
+    /**
+     * Call to navigate back from a current component. Similar to push(), you can also pass navigation options.
+     */
+    pop(opts, done) {
+        return this.queueTrns({
+            removeStart: -1,
+            removeCount: 1,
+            opts
+        }, done);
+    }
+    /**
+     * Pop to a specific index in the navigation stack
+     */
+    popTo(indexOrViewCtrl, opts, done) {
+        const config = {
+            removeStart: -1,
+            removeCount: -1,
+            opts
+        };
+        if (typeof indexOrViewCtrl === "object" && indexOrViewCtrl.component) {
+            config.removeView = indexOrViewCtrl;
+            config.removeStart = 1;
+        }
+        else if (typeof indexOrViewCtrl === "number") {
+            config.removeStart = indexOrViewCtrl + 1;
+        }
+        return this.queueTrns(config, done);
+    }
+    /**
+     * Navigate back to the root of the stack, no matter how far back that is.
+     */
+    popToRoot(opts, done) {
+        return this.queueTrns({
+            removeStart: 1,
+            removeCount: -1,
+            opts
+        }, done);
+    }
+    /**
+     * Removes a page from the nav stack at the specified index.
+     */
+    removeIndex(startIndex, removeCount = 1, opts, done) {
+        return this.queueTrns({
+            removeStart: startIndex,
+            removeCount,
+            opts
+        }, done);
+    }
+    /**
+     * Set the root for the current navigation stack.
+     */
+    setRoot(component, componentProps, opts, done) {
+        return this.setPages([{ page: component, params: componentProps }], opts, done);
+    }
+    /**
+     * Set the views of the current navigation stack and navigate to the last view. By default animations are disabled, but they can be enabled by passing options to the navigation controller.You can also pass any navigation params to the individual pages in the array.
+     */
+    setPages(views, opts, done) {
+        if (!opts) {
+            opts = {};
+        }
+        // if animation wasn't set to true then default it to NOT animate
+        if (opts.animated !== true) {
+            opts.animated = false;
+        }
+        return this.queueTrns({
+            insertStart: 0,
+            insertViews: views,
+            removeStart: 0,
+            removeCount: -1,
+            opts
+        }, done);
+    }
+    /** @hidden */
+    setRouteId(id, params, direction) {
+        const active = this.getActive();
+        if (matches(active, id, params)) {
+            return Promise.resolve({
+                changed: false,
+                element: active.element
+            });
+        }
+        let resolve;
+        const promise = new Promise(r => (resolve = r));
+        let finish;
+        const commonOpts = {
+            updateURL: false,
+            viewIsReady: enteringEl => {
+                let mark;
+                const p = new Promise(r => (mark = r));
+                resolve({
+                    changed: true,
+                    element: enteringEl,
+                    markVisible: async () => {
+                        mark();
+                        await finish;
+                    }
+                });
+                return p;
+            }
+        };
+        if (direction === 0) {
+            finish = this.setRoot(id, params, commonOpts);
+        }
+        else {
+            const viewController = this.views.find(v => matches(v, id, params));
+            if (viewController) {
+                finish = this.popTo(viewController, Object.assign({}, commonOpts, { direction: "back" }));
+            }
+            else if (direction === 1) {
+                finish = this.push(id, params, commonOpts);
+            }
+            else if (direction === -1) {
+                finish = this.setRoot(id, params, Object.assign({}, commonOpts, { direction: "back", animated: true }));
+            }
+        }
+        return promise;
+    }
+    /** @hidden */
+    getRouteId() {
+        const active = this.getActive();
+        return active
+            ? {
+                id: active.element.tagName,
+                params: active.params,
+                element: active.element
+            }
+            : undefined;
+    }
+    /**
+     * Returns true or false if the current view can go back
+     */
+    canGoBack(view = this.getActive()) {
+        return !!(view && this.getPrevious(view));
+    }
+    /**
+     * Gets the active view
+     */
+    getActive() {
+        return this.views[this.views.length - 1];
+    }
+    /**
+     * Returns the view at the index
+     */
+    getByIndex(index) {
+        return this.views[index];
+    }
+    /**
+     * Gets the previous view
+     */
+    getPrevious(view = this.getActive()) {
+        if (!view) {
+            return undefined;
+        }
+        const views = this.views;
+        const index = views.indexOf(view);
+        return index > 0 ? views[index - 1] : undefined;
+    }
+    /**
+     * Returns the length of navigation stack
+     */
+    isAnimating() {
+        return this.isTransitioning;
+    }
+    getLength() {
+        return this.views.length;
+    }
+    // _queueTrns() adds a navigation stack change to the queue and schedules it to run:
+    // 1. _nextTrns(): consumes the next transition in the queue
+    // 2. _viewInit(): initializes enteringView if required
+    // 3. _viewTest(): ensures canLeave/canEnter returns true, so the operation can continue
+    // 4. _postViewInit(): add/remove the views from the navigation stack
+    // 5. _transitionInit(): initializes the visual transition if required and schedules it to run
+    // 6. _viewAttachToDOM(): attaches the enteringView to the DOM
+    // 7. _transitionStart(): called once the transition actually starts, it initializes the Animation underneath.
+    // 8. _transitionFinish(): called once the transition finishes
+    // 9. _cleanup(): syncs the navigation internal state with the DOM. For example it removes the pages from the DOM or hides/show them.
+    queueTrns(ti, done) {
+        const promise = new Promise((resolve, reject) => {
+            ti.resolve = resolve;
+            ti.reject = reject;
+        });
+        ti.done = done;
+        // Normalize empty
+        if (ti.insertViews && ti.insertViews.length === 0) {
+            ti.insertViews = undefined;
+        }
+        // Enqueue transition instruction
+        this.transInstr.push(ti);
+        // if there isn't a transition already happening
+        // then this will kick off this transition
+        this.nextTrns();
+        return promise;
+    }
+    success(result, ti) {
+        if (this.transInstr === null) {
+            this.fireError("nav controller was destroyed", ti);
+            return;
+        }
+        if (ti.done) {
+            ti.done(result.hasCompleted, result.requiresTransition, result.enteringView, result.leavingView, result.direction);
+        }
+        ti.resolve(result.hasCompleted);
+        if (ti.opts.updateURL !== false && this.useRouter) {
+            const router = this.win.document.querySelector("ion-router");
+            if (router) {
+                const direction = result.direction === "back" ? -1 : 1;
+                router.navChanged(direction);
+            }
+        }
+    }
+    failed(rejectReason, ti) {
+        if (this.transInstr === null) {
+            this.fireError("nav controller was destroyed", ti);
+            return;
+        }
+        this.transInstr.length = 0;
+        this.fireError(rejectReason, ti);
+    }
+    fireError(rejectReason, ti) {
+        if (ti.done) {
+            ti.done(false, false, rejectReason);
+        }
+        if (ti.reject && !this.destroyed) {
+            ti.reject(rejectReason);
+        }
+        else {
+            ti.resolve(false);
+        }
+    }
+    nextTrns() {
+        // this is the framework's bread 'n butta function
+        // only one transition is allowed at any given time
+        if (this.isTransitioning) {
+            return false;
+        }
+        // there is no transition happening right now
+        // get the next instruction
+        const ti = this.transInstr.shift();
+        if (!ti) {
+            return false;
+        }
+        this.runTransition(ti);
+        return true;
+    }
+    async runTransition(ti) {
+        try {
+            // set that this nav is actively transitioning
+            this.ionNavWillChange.emit();
+            this.isTransitioning = true;
+            this.prepareTI(ti);
+            const leavingView = this.getActive();
+            const enteringView = this.getEnteringView(ti, leavingView);
+            if (!leavingView && !enteringView) {
+                throw new Error("no views in the stack to be removed");
+            }
+            if (enteringView && enteringView.state === 1 /* New */) {
+                await enteringView.init(this.el);
+            }
+            this.postViewInit(enteringView, leavingView, ti);
+            // Needs transition?
+            const requiresTransition = (ti.enteringRequiresTransition || ti.leavingRequiresTransition) &&
+                enteringView !== leavingView;
+            const result = requiresTransition
+                ? await this.transition(enteringView, leavingView, ti)
+                : {
+                    // transition is not required, so we are already done!
+                    // they're inserting/removing the views somewhere in the middle or
+                    // beginning, so visually nothing needs to animate/transition
+                    // resolve immediately because there's no animation that's happening
+                    hasCompleted: true,
+                    requiresTransition: false
+                };
+            this.success(result, ti);
+            this.ionNavDidChange.emit();
+        }
+        catch (rejectReason) {
+            this.failed(rejectReason, ti);
+        }
+        this.isTransitioning = false;
+        this.nextTrns();
+    }
+    prepareTI(ti) {
+        const viewsLength = this.views.length;
+        ti.opts = ti.opts || {};
+        if (ti.opts.delegate === undefined) {
+            ti.opts.delegate = this.delegate;
+        }
+        if (ti.removeView != null) {
+            assert(ti.removeStart != null, "removeView needs removeStart");
+            assert(ti.removeCount != null, "removeView needs removeCount");
+            const index = this.views.indexOf(ti.removeView);
+            if (index < 0) {
+                throw new Error("removeView was not found");
+            }
+            ti.removeStart += index;
+        }
+        if (ti.removeStart != null) {
+            if (ti.removeStart < 0) {
+                ti.removeStart = viewsLength - 1;
+            }
+            if (ti.removeCount < 0) {
+                ti.removeCount = viewsLength - ti.removeStart;
+            }
+            ti.leavingRequiresTransition =
+                ti.removeCount > 0 && ti.removeStart + ti.removeCount === viewsLength;
+        }
+        if (ti.insertViews) {
+            // allow -1 to be passed in to auto push it on the end
+            // and clean up the index if it's larger then the size of the stack
+            if (ti.insertStart < 0 || ti.insertStart > viewsLength) {
+                ti.insertStart = viewsLength;
+            }
+            ti.enteringRequiresTransition = ti.insertStart === viewsLength;
+        }
+        const insertViews = ti.insertViews;
+        if (!insertViews) {
+            return;
+        }
+        assert(insertViews.length > 0, "length can not be zero");
+        const viewControllers = convertToViews(insertViews);
+        if (viewControllers.length === 0) {
+            throw new Error("invalid views to insert");
+        }
+        // Check all the inserted view are correct
+        for (const view of viewControllers) {
+            view.delegate = ti.opts.delegate;
+            const nav = view.nav;
+            if (nav && nav !== this) {
+                throw new Error("inserted view was already inserted");
+            }
+            if (view.state === 3 /* Destroyed */) {
+                throw new Error("inserted view was already destroyed");
+            }
+        }
+        ti.insertViews = viewControllers;
+    }
+    getEnteringView(ti, leavingView) {
+        const insertViews = ti.insertViews;
+        if (insertViews) {
+            // grab the very last view of the views to be inserted
+            // and initialize it as the new entering view
+            return insertViews[insertViews.length - 1];
+        }
+        const removeStart = ti.removeStart;
+        if (removeStart != null) {
+            const views = this.views;
+            const removeEnd = removeStart + ti.removeCount;
+            for (let i = views.length - 1; i >= 0; i--) {
+                const view = views[i];
+                if ((i < removeStart || i >= removeEnd) && view !== leavingView) {
+                    return view;
+                }
+            }
+        }
+        return undefined;
+    }
+    postViewInit(enteringView, leavingView, ti) {
+        assert(leavingView || enteringView, "Both leavingView and enteringView are null");
+        assert(ti.resolve, "resolve must be valid");
+        assert(ti.reject, "reject must be valid");
+        const opts = ti.opts;
+        const insertViews = ti.insertViews;
+        const removeStart = ti.removeStart;
+        const removeCount = ti.removeCount;
+        let destroyQueue;
+        // there are views to remove
+        if (removeStart != null && removeCount != null) {
+            assert(removeStart >= 0, "removeStart can not be negative");
+            assert(removeCount >= 0, "removeCount can not be negative");
+            destroyQueue = [];
+            for (let i = 0; i < removeCount; i++) {
+                const view = this.views[i + removeStart];
+                if (view && view !== enteringView && view !== leavingView) {
+                    destroyQueue.push(view);
+                }
+            }
+            // default the direction to "back"
+            opts.direction = opts.direction || "back";
+        }
+        const finalBalance = this.views.length +
+            (insertViews ? insertViews.length : 0) -
+            (removeCount ? removeCount : 0);
+        assert(finalBalance >= 0, "final balance can not be negative");
+        if (finalBalance === 0) {
+            console.warn(`You can't remove all the pages in the navigation stack. nav.pop() is probably called too many times.`, this, this.el);
+            throw new Error("navigation stack needs at least one root page");
+        }
+        // At this point the transition can not be rejected, any throw should be an error
+        // there are views to insert
+        if (insertViews) {
+            // add the views to the
+            let insertIndex = ti.insertStart;
+            for (const view of insertViews) {
+                this.insertViewAt(view, insertIndex);
+                insertIndex++;
+            }
+            if (ti.enteringRequiresTransition) {
+                // default to forward if not already set
+                opts.direction = opts.direction || "forward";
+            }
+        }
+        // if the views to be removed are in the beginning or middle
+        // and there is not a view that needs to visually transition out
+        // then just destroy them and don't transition anything
+        // batch all of lifecycles together
+        // let's make sure, callbacks are zoned
+        if (destroyQueue && destroyQueue.length > 0) {
+            for (const view of destroyQueue) {
+                lifecycle(this.win, view.element, "ionViewWillLeave" /* WillLeave */);
+                lifecycle(this.win, view.element, "ionViewDidLeave" /* DidLeave */);
+                lifecycle(this.win, view.element, "ionViewWillUnload" /* WillUnload */);
+            }
+            // once all lifecycle events has been delivered, we can safely detroy the views
+            for (const view of destroyQueue) {
+                this.destroyView(view);
+            }
+        }
+    }
+    async transition(enteringView, leavingView, ti) {
+        if (this.sbTrns) {
+            this.sbTrns.destroy();
+            this.sbTrns = undefined;
+        }
+        // we should animate (duration > 0) if the pushed page is not the first one (startup)
+        // or if it is a portal (modal, actionsheet, etc.)
+        const opts = ti.opts;
+        const progressCallback = opts.progressAnimation
+            ? (animation) => {
+                this.sbTrns = animation;
+            }
+            : undefined;
+        const enteringEl = enteringView.element;
+        const leavingEl = leavingView && leavingView.element;
+        const animated = this.animated && this.config.getBoolean("animated", true);
+        const animationOpts = Object.assign({ mode: this.mode, showGoBack: this.canGoBack(enteringView), animationCtrl: this.animationCtrl, queue: this.queue, window: this.win, baseEl: this.el, progressCallback,
+            animated,
+            enteringEl,
+            leavingEl }, opts);
+        const { hasCompleted } = await transition(animationOpts);
+        return this.transitionFinish(hasCompleted, enteringView, leavingView, opts);
+    }
+    transitionFinish(hasCompleted, enteringView, leavingView, opts) {
+        const cleanupView = hasCompleted ? enteringView : leavingView;
+        if (cleanupView) {
+            this.cleanup(cleanupView);
+        }
+        return {
+            hasCompleted,
+            requiresTransition: true,
+            enteringView,
+            leavingView,
+            direction: opts.direction
+        };
+    }
+    insertViewAt(view, index) {
+        const views = this.views;
+        const existingIndex = views.indexOf(view);
+        if (existingIndex > -1) {
+            // this view is already in the stack!!
+            // move it to its new location
+            assert(view.nav === this, "view is not part of the nav");
+            views.splice(index, 0, views.splice(existingIndex, 1)[0]);
+        }
+        else {
+            assert(!view.nav, "nav is used");
+            // this is a new view to add to the stack
+            // create the new entering view
+            view.nav = this;
+            // insert the entering view into the correct index in the stack
+            views.splice(index, 0, view);
+        }
+    }
+    removeView(view) {
+        assert(view.state === 2 /* Attached */ || view.state === 3 /* Destroyed */, "view state should be loaded or destroyed");
+        const views = this.views;
+        const index = views.indexOf(view);
+        assert(index > -1, "view must be part of the stack");
+        if (index >= 0) {
+            views.splice(index, 1);
+        }
+    }
+    destroyView(view) {
+        view._destroy();
+        this.removeView(view);
+    }
+    /**
+     * DOM WRITE
+     */
+    cleanup(activeView) {
+        // ok, cleanup time!! Destroy all of the views that are
+        // INACTIVE and come after the active view
+        // only do this if the views exist, though
+        if (this.destroyed) {
+            return;
+        }
+        const views = this.views;
+        const activeViewIndex = views.indexOf(activeView);
+        for (let i = views.length - 1; i >= 0; i--) {
+            const view = views[i];
+            const element = view.element;
+            if (i > activeViewIndex) {
+                // this view comes after the active view
+                // let's unload it
+                lifecycle(this.win, element, "ionViewWillUnload" /* WillUnload */);
+                this.destroyView(view);
+            }
+            else if (i < activeViewIndex) {
+                // this view comes before the active view
+                // and it is not a portal then ensure it is hidden
+                setPageHidden(element, true);
+            }
+        }
+    }
+    canStart() {
+        return !!this.swipeGesture &&
+            !this.isTransitioning &&
+            this.canGoBack();
+    }
+    onStart() {
+        if (this.isTransitioning || this.transInstr.length > 0) {
+            return;
+        }
+        // default the direction to "back";
+        const opts = {
+            direction: "back",
+            progressAnimation: true
+        };
+        this.queueTrns({
+            removeStart: -1,
+            removeCount: 1,
+            opts
+        }, undefined);
+    }
+    onMove(detail) {
+        if (this.sbTrns) {
+            // continue to disable the app while actively dragging
+            this.isTransitioning = true;
+            // set the transition animation's progress
+            const delta = detail.deltaX;
+            const stepValue = delta / this.win.innerWidth;
+            // set the transition animation's progress
+            this.sbTrns.progressStep(stepValue);
+        }
+    }
+    onEnd(detail) {
+        if (this.sbTrns) {
+            // the swipe back gesture has ended
+            const delta = detail.deltaX;
+            const width = this.win.innerWidth;
+            const stepValue = delta / width;
+            const velocity = detail.velocityX;
+            const z = width / 2;
+            const shouldComplete = velocity >= 0 && (velocity > 0.2 || detail.deltaX > z);
+            const missing = shouldComplete ? 1 - stepValue : stepValue;
+            const missingDistance = missing * width;
+            let realDur = 0;
+            if (missingDistance > 5) {
+                const dur = missingDistance / Math.abs(velocity);
+                realDur = Math.min(dur, 300);
+            }
+            this.sbTrns.progressEnd(shouldComplete, stepValue, realDur);
+        }
+    }
+    render() {
+        return [
+            this.mode === "ios" && h("div", { class: "nav-decor" }),
+            h("slot", null)
+        ];
+    }
+    static get is() { return "ion-nav"; }
+    static get encapsulation() { return "shadow"; }
+    static get properties() {
+        return {
+            "animated": {
+                "type": Boolean,
+                "attr": "animated"
+            },
+            "animationCtrl": {
+                "connect": "ion-animation-controller"
+            },
+            "canGoBack": {
+                "method": true
+            },
+            "config": {
+                "context": "config"
+            },
+            "delegate": {
+                "type": "Any",
+                "attr": "delegate"
+            },
+            "el": {
+                "elementRef": true
+            },
+            "getActive": {
+                "method": true
+            },
+            "getByIndex": {
+                "method": true
+            },
+            "getLength": {
+                "method": true
+            },
+            "getPrevious": {
+                "method": true
+            },
+            "getRouteId": {
+                "method": true
+            },
+            "insert": {
+                "method": true
+            },
+            "insertPages": {
+                "method": true
+            },
+            "isAnimating": {
+                "method": true
+            },
+            "pop": {
+                "method": true
+            },
+            "popTo": {
+                "method": true
+            },
+            "popToRoot": {
+                "method": true
+            },
+            "push": {
+                "method": true
+            },
+            "queue": {
+                "context": "queue"
+            },
+            "removeIndex": {
+                "method": true
+            },
+            "root": {
+                "type": String,
+                "attr": "root",
+                "watchCallbacks": ["rootChanged"]
+            },
+            "rootParams": {
+                "type": "Any",
+                "attr": "root-params"
+            },
+            "setPages": {
+                "method": true
+            },
+            "setRoot": {
+                "method": true
+            },
+            "setRouteId": {
+                "method": true
+            },
+            "swipeGesture": {
+                "type": Boolean,
+                "attr": "swipe-gesture",
+                "mutable": true,
+                "watchCallbacks": ["swipeGestureChanged"]
+            },
+            "win": {
+                "context": "window"
+            }
+        };
+    }
+    static get events() {
+        return [{
+                "name": "ionNavWillLoad",
+                "method": "ionNavWillLoad",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionNavWillChange",
+                "method": "ionNavWillChange",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionNavDidChange",
+                "method": "ionNavDidChange",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }];
+    }
+    static get style() { return ":host {\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  position: absolute;\n  contain: layout size style;\n  overflow: hidden;\n  z-index: 0; }\n\n.nav-decor {\n  display: none; }\n\n:host(.show-decor) .nav-decor {\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  display: block;\n  position: absolute;\n  background: #000;\n  z-index: 0;\n  pointer-events: none; }"; }
+}
+
+class Radio {
+    constructor() {
+        this.inputId = `ion-rb-${radioButtonIds++}`;
+        this.keyFocus = false;
+        /**
+         * The name of the control, which is submitted with the form data.
+         */
+        this.name = this.inputId;
+        /*
+         * If true, the user cannot interact with the radio. Defaults to `false`.
+         */
+        this.disabled = false;
+        /**
+         * If true, the radio is selected. Defaults to `false`.
+         */
+        this.checked = false;
+    }
+    componentWillLoad() {
+        this.ionSelect = deferEvent(this.ionSelect);
+        this.ionStyle = deferEvent(this.ionStyle);
+        if (this.value === undefined) {
+            this.value = this.inputId;
+        }
+        this.emitStyle();
+    }
+    componentDidLoad() {
+        this.ionRadioDidLoad.emit();
+        this.nativeInput.checked = this.checked;
+        const parentItem = this.nativeInput.closest("ion-item");
+        if (parentItem) {
+            const itemLabel = parentItem.querySelector("ion-label");
+            if (itemLabel) {
+                itemLabel.id = this.inputId + "-lbl";
+                this.nativeInput.setAttribute("aria-labelledby", itemLabel.id);
+            }
+        }
+    }
+    componentDidUnload() {
+        this.ionRadioDidUnload.emit();
+    }
+    colorChanged() {
+        this.emitStyle();
+    }
+    checkedChanged(isChecked) {
+        if (this.nativeInput.checked !== isChecked) {
+            // keep the checked value and native input `nync
+            this.nativeInput.checked = isChecked;
+        }
+        if (isChecked) {
+            this.ionSelect.emit({
+                checked: true,
+                value: this.value
+            });
+        }
+        this.emitStyle();
+    }
+    disabledChanged(isDisabled) {
+        this.nativeInput.disabled = isDisabled;
+        this.emitStyle();
+    }
+    emitStyle() {
+        this.ionStyle.emit({
+            "radio-checked": this.checked,
+            "interactive-disabled": this.disabled,
+        });
+    }
+    onClick() {
+        this.checkedChanged(true);
+    }
+    onChange() {
+        this.checked = true;
+        this.nativeInput.focus();
+    }
+    onKeyUp() {
+        this.keyFocus = true;
+    }
+    onFocus() {
+        this.ionFocus.emit();
+    }
+    onBlur() {
+        this.keyFocus = false;
+        this.ionBlur.emit();
+    }
+    hostData() {
+        return {
+            class: Object.assign({}, createColorClasses(this.color), { "in-item": hostContext(".item", this.el), "interactive": true, "radio-checked": this.checked, "radio-disabled": this.disabled, "radio-key": this.keyFocus })
+        };
+    }
+    render() {
+        return [
+            h("div", { class: "radio-icon" }, h("div", { class: "radio-inner" })),
+            h("input", { type: "radio", onClick: this.onClick.bind(this), onChange: this.onChange.bind(this), onFocus: this.onFocus.bind(this), onBlur: this.onBlur.bind(this), onKeyUp: this.onKeyUp.bind(this), id: this.inputId, name: this.name, value: this.value, disabled: this.disabled, ref: r => this.nativeInput = r })
+        ];
+    }
+    static get is() { return "ion-radio"; }
+    static get encapsulation() { return "shadow"; }
+    static get properties() {
+        return {
+            "checked": {
+                "type": Boolean,
+                "attr": "checked",
+                "mutable": true,
+                "watchCallbacks": ["checkedChanged"]
+            },
+            "color": {
+                "type": String,
+                "attr": "color",
+                "watchCallbacks": ["colorChanged"]
+            },
+            "disabled": {
+                "type": Boolean,
+                "attr": "disabled",
+                "watchCallbacks": ["disabledChanged"]
+            },
+            "el": {
+                "elementRef": true
+            },
+            "keyFocus": {
+                "state": true
+            },
+            "mode": {
+                "type": String,
+                "attr": "mode"
+            },
+            "name": {
+                "type": String,
+                "attr": "name"
+            },
+            "value": {
+                "type": String,
+                "attr": "value",
+                "mutable": true
+            }
+        };
+    }
+    static get events() {
+        return [{
+                "name": "ionRadioDidLoad",
+                "method": "ionRadioDidLoad",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionRadioDidUnload",
+                "method": "ionRadioDidUnload",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionStyle",
+                "method": "ionStyle",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionSelect",
+                "method": "ionSelect",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionFocus",
+                "method": "ionFocus",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }, {
+                "name": "ionBlur",
+                "method": "ionBlur",
+                "bubbles": true,
+                "cancelable": true,
+                "composed": true
+            }];
+    }
+    static get style() { return ":host {\n  --ion-color-base: var(--ion-color-primary, #3880ff);\n  display: inline-block;\n  position: relative;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none; }\n\n:host(.radio-disabled) {\n  pointer-events: none; }\n\n.radio-icon {\n  display: block;\n  position: relative;\n  width: var(--width);\n  height: var(--height);\n  contain: layout size style; }\n\ninput {\n  left: 0;\n  top: 0;\n  margin: 0;\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  border: 0;\n  background: transparent;\n  cursor: pointer;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n  outline: none; }\n\n.radio-icon,\n.radio-inner {\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box; }\n\n:host {\n  --width: 16px;\n  --height: 16px; }\n\n.radio-icon {\n  left: 0;\n  top: 0;\n  margin: 0;\n  border-radius: 50%;\n  border-width: 2px;\n  border-style: solid;\n  border-color: var(--ion-text-color-step-600, #999999); }\n\n.radio-inner {\n  left: 2px;\n  top: 2px;\n  border-radius: 50%;\n  position: absolute;\n  width: 8px;\n  height: 8px;\n  -webkit-transform: scale3d(0, 0, 0);\n  transform: scale3d(0, 0, 0);\n  -webkit-transition: -webkit-transform 280ms cubic-bezier(0.4, 0, 0.2, 1);\n  transition: -webkit-transform 280ms cubic-bezier(0.4, 0, 0.2, 1);\n  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);\n  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1), -webkit-transform 280ms cubic-bezier(0.4, 0, 0.2, 1);\n  background-color: var(--ion-color-base); }\n\n:host(.radio-checked) .radio-icon {\n  border-color: var(--ion-color-base); }\n\n:host(.radio-checked) .radio-inner {\n  -webkit-transform: scale3d(1, 1, 1);\n  transform: scale3d(1, 1, 1); }\n\n:host(.radio-disabled) {\n  opacity: 0.3; }\n\n:host(.radio-key) .radio-icon::after {\n  border-radius: 50%;\n  left: -12px;\n  top: -12px;\n  display: block;\n  position: absolute;\n  width: 36px;\n  height: 36px;\n  background: var(--ion-color-primary-tint, #4c8dff);\n  content: \"\";\n  opacity: .2; }\n\n:host(.in-item) {\n  margin: 9px 10px 9px 0;\n  display: block;\n  position: static; }\n\n:host(.in-item[slot=\"start\"]) {\n  margin: 11px 36px 10px 4px; }"; }
+    static get styleMode() { return "md"; }
+}
+let radioButtonIds = 0;
+
+export { Backdrop as IonBackdrop, Button as IonButton, Nav as IonNav, Radio as IonRadio };

@@ -22,8 +22,10 @@ if (success) {
       external: [
         'crypto',
         'fs',
+        'http',
         'os',
-        'path'
+        'path',
+        'url'
       ],
       plugins: [
         rollupResolve({

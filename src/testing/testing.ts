@@ -1,5 +1,5 @@
 import * as d from '../declarations';
-import { completeE2EScreenshots, startE2ESnapshot } from '../screenshot/generator/data-generator';
+import { completeE2EScreenshots, startE2ESnapshot } from '../screenshot/data-generator';
 import { getLoaderFileName } from '../compiler/app/app-file-naming';
 import { hasError, normalizePath } from '../compiler/util';
 import { runJest, setupJestConfig } from './jest/jest-runner';

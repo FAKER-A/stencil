@@ -35,7 +35,7 @@ export interface FindTestElement extends TestElementUtils {
    * argument is supplied. Otherwise it'll use the shadowRoot element itself.
    * @param shadowDomSelector Shadow Dom querySelector
    */
-  shadow(shadowDomSelector?: string): TestElementUtils;
+  findInShadow(shadowDomSelector?: string): TestElementUtils;
 }
 
 
