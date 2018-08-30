@@ -124,7 +124,6 @@ export interface StencilConfig {
   minifyCss?: boolean;
   minifyJs?: boolean;
   preamble?: string;
-  screenshot?: d.ScreenshotConfig;
   srcIndexHtml?: string;
   sys?: d.StencilSystem;
   testing?: d.TestingConfig;

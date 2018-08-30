@@ -92,7 +92,7 @@ export class Testing implements d.Testing {
     }
 
     try {
-      await runJest(config, this.jestConfigPath);
+      await runJest(config, this.jestConfigPath, doScreenshots);
     } catch (e) {
       config.logger.error(e);
     }

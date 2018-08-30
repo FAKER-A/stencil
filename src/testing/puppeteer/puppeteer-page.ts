@@ -18,6 +18,8 @@ export async function newTestPage(opts: pd.NewTestPageOptions = {}) {
 
   const page: pd.TestPage = await global.__NEW_TEST_PAGE__();
 
+  await setEmulate(page);
+
   await page.setCacheEnabled(false);
 
   await initPageEvents(page);
@@ -144,10 +146,89 @@ async function setTestContent(page: pd.TestPage, html: string) {
 }
 
 
-async function waitForQueue(page: pd.TestPage) {
-  if (page.isClosed()) {
+async function setEmulate(page: pd.TestPage) {
+  const env = (process.env) as d.E2EProcessEnv;
+
+  const emulateContent = env.STENCIL_EMULATE;
+  if (!emulateContent) {
     return;
   }
+
+  let emulate: d.ScreenshotEmulate;
+
+  try {
+    emulate = JSON.parse(emulateContent) as d.ScreenshotEmulate;
+
+  } catch (e) {
+    console.error('setEmulate', e);
+    return;
+  }
+
+  let emulateOptions: puppeteer.EmulateOptions = {
+    viewport: {
+      width: 800,
+      height: 600,
+      deviceScaleFactor: 1,
+      isMobile: false,
+      hasTouch: false,
+      isLandscape: false
+    }
+  };
+
+  if (typeof emulate.device === 'string') {
+    try {
+      const deviceDescriptors = require('puppeteer/DeviceDescriptors');
+
+      emulateOptions = deviceDescriptors[emulate.device] as puppeteer.EmulateOptions;
+      if (!emulateOptions) {
+        console.error(`invalid emulate device: ${emulate.device}`);
+        return;
+      }
+
+    } catch (e) {
+      console.error('error loading puppeteer DeviceDescriptors', e);
+      return;
+    }
+  }
+
+  if (typeof emulate.width === 'number') {
+    emulateOptions.viewport.width = emulate.width;
+  }
+
+  if (typeof emulate.height === 'number') {
+    emulateOptions.viewport.height = emulate.height;
+  }
+
+  if (typeof emulate.hasTouch === 'boolean') {
+    emulateOptions.viewport.hasTouch = emulate.hasTouch;
+  }
+
+  if (typeof emulate.isLandscape === 'boolean') {
+    emulateOptions.viewport.isLandscape = emulate.isLandscape;
+  }
+
+  if (typeof emulate.isMobile === 'boolean') {
+    emulateOptions.viewport.isMobile = emulate.isMobile;
+  }
+
+  if (typeof emulate.userAgent === 'string') {
+    emulateOptions.userAgent = emulate.userAgent;
+  }
+
+  await page.emulate(emulateOptions);
+
+  if (typeof emulate.mediaType === 'string' || emulate.mediaType === null) {
+    await page.emulateMedia(emulate.mediaType as any);
+  }
+}
+
+
+async function waitForQueue(page: pd.TestPage) {
+  try {
+    if (page.isClosed()) {
+      return;
+    }
+  } catch (e) {}
 
   await page.evaluate(() => {
     return new Promise(resolve => window.requestAnimationFrame(resolve));

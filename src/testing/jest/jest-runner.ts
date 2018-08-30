@@ -4,7 +4,26 @@ import * as cp from 'child_process';
 import * as path from 'path';
 
 
-export async function runJest(config: d.Config, jestConfigPath: string) {
+export async function runJest(config: d.Config, jestConfigPath: string, doScreenshots: boolean) {
+  if (doScreenshots) {
+    const emulateDevices = config.testing.emulate;
+    if (Array.isArray(emulateDevices)) {
+
+      for (let i = 0; i < emulateDevices.length; i++) {
+        const emulate = emulateDevices[i];
+
+        await runJestDevice(config, jestConfigPath, emulate);
+      }
+
+      return;
+    }
+  }
+
+  await runJestDevice(config, jestConfigPath, null);
+}
+
+
+export async function runJestDevice(config: d.Config, jestConfigPath: string, emulate: d.ScreenshotEmulate) {
   const jestPkgJsonPath = config.sys.resolveModule(config.rootDir, 'jest');
   const jestPkgJson: d.PackageJsonData = require(jestPkgJsonPath);
   const jestBinModule = path.join(normalizePath(path.dirname(jestPkgJsonPath)), jestPkgJson.bin.jest);
@@ -22,8 +41,15 @@ export async function runJest(config: d.Config, jestConfigPath: string) {
   config.logger.debug(`jest args: ${args.join(' ')}`);
 
   return new Promise((resolve, reject) => {
+
+    const env = Object.assign({}, process.env as d.E2EProcessEnv);
+    if (emulate) {
+      env.STENCIL_EMULATE = JSON.stringify(emulate);
+    }
+
     const p = cp.fork(jestBinModule, args, {
-      cwd: config.rootDir
+      cwd: config.rootDir,
+      env: env
     });
 
     p.on(`unhandledRejection`, (r: any) => {
@@ -51,6 +77,7 @@ export async function setupJestConfig(config: d.Config) {
   config.logger.debug(`jest config: ${jestConfigPath}`);
 
   const jestConfig = Object.assign({}, config.testing);
+  delete jestConfig.emulate;
 
   await config.sys.fs.writeFile(
     jestConfigPath,

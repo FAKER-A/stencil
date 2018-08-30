@@ -1,9 +1,4 @@
 
-export interface ScreenshotConfig {
-
-}
-
-
 export interface E2EData {
   appName: string;
   masterSnapshotId: string;
@@ -43,6 +38,7 @@ export interface ScreenshotConnector {
   setMasterSnapshot(snapshotId: string): Promise<E2EData>;
   startServer(): Promise<ScreenshotServer>;
 }
+
 
 export interface ScreenshotServer {
   url: string;

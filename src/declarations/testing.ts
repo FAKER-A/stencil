@@ -27,6 +27,7 @@ export interface E2EProcessEnv {
   STENCIL_SNAPSHOT_ID?: string;
   STENCIL_SNAPSHOT_DESC?: string;
   STENCIL_SNAPSHOT_COMMIT_URL?: string;
+  STENCIL_EMULATE?: string;
 
   __STENCIL_BROWSER_URL__?: string;
   __STENCIL_LOADER_SCRIPT_URL__?: string;
@@ -45,6 +46,7 @@ export interface Testing {
 
 
 export interface TestingConfig {
+  emulate?: ScreenshotEmulate[];
   moduleFileExtensions?: string[];
   reporters?: string[];
   setupTestFrameworkScriptFile?: string;
@@ -53,6 +55,52 @@ export interface TestingConfig {
   testPathIgnorePatterns?: string[];
   testRegex?: string;
   transform?: {[key: string]: string };
+}
+
+
+export interface ScreenshotEmulate {
+  /**
+   * Predefined device descriptor name, such as "iPhone X" or "Nexus 10".
+   * For a complete list please see: https://github.com/GoogleChrome/puppeteer/blob/master/DeviceDescriptors.js
+   */
+  device?: string;
+
+  /**
+   * Page width in pixels.
+   */
+  width?: number;
+
+  /**
+   * page height in pixels.
+   */
+  height?: number;
+
+  /**
+   * Specify device scale factor (can be thought of as dpr). Defaults to 1.
+   */
+  deviceScaleFactor?: number;
+
+  /**
+   * Whether the meta viewport tag is taken into account. Defaults to false.
+   */
+  isMobile?: boolean;
+
+  /**
+   * Specifies if viewport supports touch events. Defaults to false
+   */
+  hasTouch?: boolean;
+
+  /**
+   * Specifies if viewport is in landscape mode. Defaults to false.
+   */
+  isLandscape?: boolean;
+
+  userAgent?: string;
+
+  /**
+   * Changes the CSS media type of the page. The only allowed values are 'screen', 'print' and null. Passing null disables media emulation.
+   */
+  mediaType?: string;
 }
 
 

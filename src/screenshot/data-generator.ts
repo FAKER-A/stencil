@@ -51,7 +51,7 @@ export async function writeE2EScreenshot(screenshot: Buffer, uniqueDescription: 
                      .update(screenshot)
                      .digest('base64');
 
-  const cleanedHash = hash.replace(/\\/g, '~')
+  const cleanedHash = hash.replace(/\//g, '~')
                           .replace(/\+/g, '_')
                           .replace(/\=/g, '');
 
