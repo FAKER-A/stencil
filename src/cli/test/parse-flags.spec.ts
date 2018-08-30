@@ -110,6 +110,17 @@ describe('parseFlags', () => {
     expect(flags.cache).toBe(null);
   });
 
+  it('should parse --compare', () => {
+    process.argv[2] = '--compare';
+    const flags = parseFlags(process);
+    expect(flags.compare).toBe(true);
+  });
+
+  it('should not parse --compare', () => {
+    const flags = parseFlags(process);
+    expect(flags.compare).toBe(null);
+  });
+
   it('should override --config with second --config', () => {
     process.argv[2] = '--config';
     process.argv[3] = '/config-1.js';
@@ -290,13 +301,6 @@ describe('parseFlags', () => {
     expect(flags.screenshot).toBe(true);
   });
 
-  it('should parse --screenshot-adapter', () => {
-    process.argv[2] = '--screenshot-adapter';
-    process.argv[3] = 'some/adapter.js';
-    const flags = parseFlags(process);
-    expect(flags.screenshotAdapter).toBe('some/adapter.js');
-  });
-
   it('should parse --serve', () => {
     process.argv[2] = '--serve';
     const flags = parseFlags(process);
@@ -319,6 +323,24 @@ describe('parseFlags', () => {
     process.argv[2] = '--stats';
     const flags = parseFlags(process);
     expect(flags.stats).toBe(true);
+  });
+
+  it('should parse --channel=production', () => {
+    process.argv[2] = '--channel=production';
+    const flags = parseFlags(process);
+    expect(flags.channel).toBe('production');
+  });
+
+  it('should parse --channel production', () => {
+    process.argv[2] = '--channel';
+    process.argv[3] = 'production';
+    const flags = parseFlags(process);
+    expect(flags.channel).toBe('production');
+  });
+
+  it('should not parse --channel', () => {
+    const flags = parseFlags(process);
+    expect(flags.channel).toBe(null);
   });
 
   it('should parse --version', () => {

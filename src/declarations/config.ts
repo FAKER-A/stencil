@@ -187,7 +187,9 @@ export interface ConfigFlags {
   args?: string[];
   address?: string;
   cache?: boolean;
+  channel?: string;
   checkVersion?: boolean;
+  compare?: boolean;
   config?: string;
   debug?: boolean;
   dev?: boolean;

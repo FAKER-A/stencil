@@ -122,6 +122,6 @@
   ],
   "jest": {
     "preset": "./testing/jest.preset.js",
-    "testRegex": "/Users/adam/git/stencil/src/compiler/config/test/validate-testing.spec.ts"
+    "testRegex": "/Users/adam/git/stencil/src/cli/test/parse-flags.spec.ts"
   }
 }

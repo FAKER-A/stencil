@@ -38,7 +38,7 @@ export interface StencilSystem {
     diagnostics?: d.Diagnostic[];
   }>;
   minimatch?(path: string, pattern: string, opts?: any): boolean;
-  open?: (p: string) => Promise<void>;
+  open?: (url: string) => Promise<void>;
   path?: Path;
   requestLatestCompilerVersion?(): Promise<string>;
   resolveModule?(fromDir: string, moduleId: string): string;
@@ -162,6 +162,10 @@ export interface PackageJsonData {
   files?: string[];
   ['dist-tags']: {
     latest: string;
+  };
+  repository?: {
+    type?: string;
+    url?: string;
   };
 }
 

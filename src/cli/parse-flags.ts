@@ -131,6 +131,7 @@ const ARG_OPTS = {
   boolean: [
     'cache',
     'check-version',
+    'compare',
     'debug',
     'dev',
     'docs',
@@ -156,6 +157,7 @@ const ARG_OPTS = {
   ],
   string: [
     'address',
+    'channel',
     'config',
     'docs-json',
     'log-level',

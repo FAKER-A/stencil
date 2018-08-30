@@ -28,6 +28,7 @@ node_modules/
 /screenshot/index.js
 /screenshot/package.json
 /screenshot/screenshot.connector.default.js
+/screenshot/screenshot.server.default.js
 
 test/e2e/app/components.d.ts
 

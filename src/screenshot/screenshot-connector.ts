@@ -1,4 +1,3 @@
-import { startScreenshotServer } from './screenshot-server';
 import * as d from '../declarations';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -17,10 +16,6 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
   dataDir: string;
   imagesDir: string;
   snapshotDataDir: string;
-
-  startServer(): Promise<d.ScreenshotServer> {
-    return startScreenshotServer(this);
-  }
 
   async postSnapshot(results: d.E2ESnapshot) {
     this.results = results;
@@ -83,8 +78,8 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
 
     const snapshotData: d.E2ESnapshot = {
       id: this.results.id,
-      desc: this.results.desc || '',
-      commitUrl: this.results.commitUrl || '',
+      msg: this.results.msg || '',
+      repoUrl: this.results.repoUrl || '',
       timestamp: this.results.timestamp,
       screenshots: this.results.screenshots.map(screenshot => {
         return {
@@ -141,7 +136,6 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     const snapshots = await this.getAllSnapshotData();
 
     const appData: d.E2EData = {
-      appName: this.results.appName,
       masterSnapshotId: null,
       snapshots: snapshots.map(formatSnapshotData)
     };
@@ -271,8 +265,8 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
 function formatSnapshotData(results: d.E2ESnapshot) {
   const snapshotData: d.E2ESnapshot = {
     id: results.id,
-    desc: results.desc || '',
-    commitUrl: results.commitUrl || '',
+    msg: results.msg || '',
+    repoUrl: results.repoUrl || '',
     timestamp: results.timestamp
   };
   return snapshotData;

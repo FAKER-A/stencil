@@ -7,9 +7,6 @@ import * as path from 'path';
 export async function startE2ESnapshot(config: d.Config) {
   const env = (process.env) as d.E2EProcessEnv;
 
-  const snapshotId = getSnapshotId(env);
-  config.logger.debug(`test e2e snapshot id: ${snapshotId}`);
-
   const tmpDir = config.sys.details.tmpDir;
 
   const imagesDir = config.sys.path.join(tmpDir, IMAGES_CACHE_DIR);
@@ -23,6 +20,8 @@ export async function startE2ESnapshot(config: d.Config) {
   try {
     await config.sys.fs.mkdir(dataDir);
   } catch (e) {}
+
+  const snapshotId = getSnapshotId(env);
 
   const snapshotDataDir = config.sys.path.join(dataDir, snapshotId);
   try {
@@ -39,6 +38,8 @@ export async function startE2ESnapshot(config: d.Config) {
     dataDir: dataDir,
     timestamp: Date.now()
   };
+
+  config.logger.debug(`test e2e snapshot id: ${snapshotId}`);
 
   return snapshot;
 }
@@ -94,17 +95,17 @@ export async function writeE2EScreenshot(screenshot: Buffer, uniqueDescription: 
 }
 
 
-export async function completeE2EScreenshots(config: d.Config, results: d.E2ESnapshot) {
-  let connectorModulePath = process.env.STENCIL_SCREENSHOT_CONNECTOR;
-  if (typeof connectorModulePath !== 'string' || !connectorModulePath) {
-    connectorModulePath = config.sys.path.join(
-      config.sys.compiler.packageDir, 'screenshot', 'screenshot.connector.default.js'
-    );
+export async function completeE2EScreenshots(config: d.Config, env: d.E2EProcessEnv, results: d.E2ESnapshot) {
+  try {
+    const snapshot = await consolidateData(config, results);
+
+    const connector = await runScreenshotConnector(config, env, snapshot);
+
+    await runScreenshotServer(config, env, connector);
+
+  } catch (e) {
+    config.logger.error(`completeE2EScreenshots, ${e}`);
   }
-
-  const snapshot = await consolidateData(config, results);
-
-  await runScreenshotScreenshotConnector(config, connectorModulePath, snapshot);
 }
 
 
@@ -154,27 +155,68 @@ async function consolidateData(config: d.Config, results: d.E2ESnapshot) {
 }
 
 
-async function runScreenshotScreenshotConnector(config: d.Config, connectorModulePath: string, snapshot: d.E2ESnapshot) {
+async function runScreenshotConnector(config: d.Config, env: d.E2EProcessEnv, snapshot: d.E2ESnapshot) {
+  let connector: d.ScreenshotConnector = null;
+
+  let connectorModulePath = env.STENCIL_SCREENSHOT_CONNECTOR;
+
+  if (typeof connectorModulePath !== 'string' || !connectorModulePath) {
+    connectorModulePath = config.sys.path.join(
+      config.sys.compiler.packageDir, 'screenshot', 'screenshot.connector.default.js'
+    );
+  }
+
   try {
     const ScreenshotConnector = require(connectorModulePath);
 
-    const connector: d.ScreenshotConnector = new ScreenshotConnector();
+    connector = new ScreenshotConnector();
 
-    if (typeof connector.postSnapshot === 'function') {
-      const timespan = config.logger.createTimeSpan(`update screenshot data started`);
-
-      await connector.postSnapshot(snapshot);
-
-      timespan.finish(`update screenshot data finished`);
-
-      if (typeof connector.startServer === 'function') {
-        const server = await connector.startServer();
-        config.logger.info(`screenshots: ${config.logger.magenta(server.url)}`);
-      }
+    if (typeof connector.postSnapshot !== 'function') {
+      throw new Error(`connector missing postSnapshot()`);
     }
+
+    snapshot.channel = config.flags.channel || 'local';
+
+    const timespan = config.logger.createTimeSpan(`saving screenshot data, channel: ${snapshot.channel}`);
+
+    await connector.postSnapshot(snapshot);
+
+    timespan.finish(`saving screenshot data finished`);
 
   } catch (e) {
     config.logger.error(`error running screenshot connector: ${connectorModulePath}, ${e}`);
+    connector = null;
+  }
+
+  return connector;
+}
+
+
+async function runScreenshotServer(config: d.Config, env: d.E2EProcessEnv, connector: d.ScreenshotConnector) {
+  if (!connector || !config.flags.compare) {
+    return;
+  }
+
+  let serverModulePath = env.STENCIL_SCREENSHOT_SERVER;
+
+  if (typeof serverModulePath !== 'string' || !serverModulePath) {
+    serverModulePath = config.sys.path.join(
+      config.sys.compiler.packageDir, 'screenshot', 'screenshot.server.default.js'
+    );
+  }
+
+  try {
+    const ScreenshotServer = require(serverModulePath);
+
+    const server: d.ScreenshotServer = new ScreenshotServer();
+
+    const serverInfo = await server.start(connector);
+    config.logger.info(`screenshots: ${config.logger.magenta(serverInfo.url)}`);
+
+    config.sys.open(serverInfo.url);
+
+  } catch (e) {
+    config.logger.error(`error running screenshot server: ${serverModulePath}, ${e}`);
   }
 }
 

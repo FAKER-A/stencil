@@ -7,27 +7,29 @@ import * as path from 'path';
 import * as url from 'url';
 
 
-export async function startScreenshotServer(connector: d.ScreenshotConnector) {
-  const host = 'localhost';
-  let port = 5543;
+export class ScreenshotServer implements d.ScreenshotServer {
 
-  port = await findClosestOpenPort(host, port);
+  async start(connector: d.ScreenshotConnector) {
+    const host = 'localhost';
+    let port = 5543;
 
-  const reqHandler = createRequestHandler(connector);
+    port = await findClosestOpenPort(host, port);
 
-  const server = http.createServer(reqHandler);
+    const reqHandler = createRequestHandler(connector);
 
-  process.once('SIGINT', () => {
-    server.close();
-  });
+    const server = http.createServer(reqHandler);
 
-  const info: d.ScreenshotServer = {
-    url: `http://${host}:${port}/`
-  };
+    process.once('SIGINT', () => {
+      server.close();
+    });
 
-  server.listen(port, host);
+    server.listen(port, host);
 
-  return info;
+    return {
+      url: `http://${host}:${port}/`
+    };
+  }
+
 }
 
 
@@ -173,6 +175,6 @@ function error(msg: string, res: http.ServerResponse) {
 const DEFAULT_HEADERS: d.DevResponseHeaders = {
   'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
   'Expires': '0',
-  'X-Powered-By': 'Stencil Dev Server',
+  'X-Powered-By': 'Stencil Screenshot Server',
   'Access-Control-Allow-Origin': '*'
 };

@@ -27,6 +27,8 @@ export interface E2EProcessEnv {
   STENCIL_COMMIT_ID?: string;
   STENCIL_COMMIT_MESSAGE?: string;
   STENCIL_REPO_URL?: string;
+  STENCIL_SCREENSHOT_CONNECTOR?: string;
+  STENCIL_SCREENSHOT_SERVER?: string;
 
   __STENCIL_EMULATE__?: string;
   __STENCIL_BROWSER_URL__?: string;

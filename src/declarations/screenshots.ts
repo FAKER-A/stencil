@@ -1,6 +1,5 @@
 
 export interface E2EData {
-  appName: string;
   masterSnapshotId: string;
   snapshots: E2ESnapshot[];
 }
@@ -17,7 +16,7 @@ export interface E2ESnapshot {
   timestamp: number;
   screenshots?: E2EScreenshot[];
   compilerVersion?: string;
-  appName?: string;
+  channel?: string;
 }
 
 
@@ -43,10 +42,11 @@ export interface ScreenshotConnector {
   postSnapshot(snapshot: E2ESnapshot): Promise<void>;
   readImage(imageFileName: string): any;
   setMasterSnapshot(snapshotId: string): Promise<E2EData>;
-  startServer(): Promise<ScreenshotServer>;
 }
 
 
 export interface ScreenshotServer {
-  url: string;
+  start(connector: ScreenshotConnector): Promise<{
+    url: string;
+  }>;
 }

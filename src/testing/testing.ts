@@ -98,7 +98,7 @@ export class Testing implements d.Testing {
     }
 
     if (doScreenshots) {
-      await completeE2EScreenshots(config, screenshotData);
+      await completeE2EScreenshots(config, env, screenshotData);
     }
 
     config.logger.info('');

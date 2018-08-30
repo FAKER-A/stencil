@@ -3,30 +3,31 @@
   "fsNamespace": "app",
   "loader": "../app.js",
   "global": "app.global.js",
-  "core": "app.ga7tbuf4.js",
-  "corePolyfilled": "app.s563dtpz.js",
+  "core": "app.nsmz1dys.js",
+  "corePolyfilled": "app.dcydjtvy.js",
+  "coreSsrAnnotations": "app.xof53xv0.js",
   "components": {
     "app-root": {
       "bundleIds": {
-        "$": "vsxocnup"
+        "$": "3attqmzg"
       }
     },
     "ion-alert": {
       "bundleIds": {
-        "ios": "czccrf4y",
-        "md": "4yoge9mv"
+        "ios": "s9mwgqqu",
+        "md": "ubhp9zmg"
       },
       "encapsulation": "scoped"
     },
     "ion-alert-controller": {
       "bundleIds": {
-        "$": "pktqjizw"
+        "$": "7bqzobwl"
       }
     },
     "ion-anchor": {
       "bundleIds": {
-        "md": "sygexdrk",
-        "ios": "oe8z4wsb"
+        "ios": "r6ulw3m0",
+        "md": "2al57lfy"
       },
       "encapsulation": "shadow"
     },
@@ -37,68 +38,68 @@
     },
     "ion-app": {
       "bundleIds": {
-        "$": "vsxocnup"
+        "$": "3attqmzg"
       }
     },
     "ion-back-button": {
       "bundleIds": {
-        "md": "z2iaf5p4",
-        "ios": "gczo2rkt"
+        "ios": "u9fibwwt",
+        "md": "5cjmf1lr"
       },
       "encapsulation": "scoped"
     },
     "ion-backdrop": {
       "bundleIds": {
-        "ios": "vy7hdsbg",
-        "md": "lf1bc9bg"
+        "ios": "cor164cz",
+        "md": "bpcncvqj"
       },
       "encapsulation": "shadow"
     },
     "ion-button": {
       "bundleIds": {
-        "ios": "vy7hdsbg",
-        "md": "lf1bc9bg"
+        "ios": "cor164cz",
+        "md": "bpcncvqj"
       },
       "encapsulation": "shadow"
     },
     "ion-buttons": {
       "bundleIds": {
-        "md": "z2iaf5p4",
-        "ios": "gczo2rkt"
+        "ios": "u9fibwwt",
+        "md": "5cjmf1lr"
       },
       "encapsulation": "scoped"
     },
     "ion-content": {
       "bundleIds": {
-        "md": "sygexdrk",
-        "ios": "oe8z4wsb"
+        "ios": "r6ulw3m0",
+        "md": "2al57lfy"
       },
       "encapsulation": "shadow"
     },
     "ion-header": {
       "bundleIds": {
-        "md": "jf43dmcg",
-        "ios": "oxrxaj5z"
+        "ios": "oxrxaj5z",
+        "md": "jf43dmcg"
       }
     },
     "ion-icon": {
       "bundleIds": {
-        "md": "sygexdrk",
-        "ios": "oe8z4wsb"
+        "ios": "r6ulw3m0",
+        "md": "2al57lfy"
       },
       "encapsulation": "shadow"
     },
     "ion-nav": {
       "bundleIds": {
-        "ios": "vy7hdsbg",
-        "md": "lf1bc9bg"
+        "ios": "cor164cz",
+        "md": "bpcncvqj"
       },
       "encapsulation": "shadow"
     },
     "ion-radio": {
       "bundleIds": {
-        "ios": "vy7hdsbg",
-        "md": "lf1bc9bg"
+        "ios": "cor164cz",
+        "md": "bpcncvqj"
       },
       "encapsulation": "shadow"
     },
@@ -110,41 +111,41 @@
     },
     "ion-route": {
       "bundleIds": {
-        "$": "vsxocnup"
+        "$": "3attqmzg"
       }
     },
     "ion-router": {
       "bundleIds": {
-        "$": "vsxocnup"
+        "$": "3attqmzg"
       }
     },
     "ion-title": {
       "bundleIds": {
-        "md": "sygexdrk",
-        "ios": "oe8z4wsb"
+        "ios": "r6ulw3m0",
+        "md": "2al57lfy"
       },
       "encapsulation": "shadow"
     },
     "ion-toolbar": {
       "bundleIds": {
-        "md": "sygexdrk",
-        "ios": "oe8z4wsb"
+        "ios": "r6ulw3m0",
+        "md": "2al57lfy"
       },
       "encapsulation": "shadow"
     },
     "snapshot-compare": {
       "bundleIds": {
-        "$": "f7gs5hxo"
+        "$": "ulp7odyn"
       }
     },
     "snapshot-detail": {
       "bundleIds": {
-        "$": "ex933avz"
+        "$": "abv2ecmk"
       }
     },
     "snapshot-list": {
       "bundleIds": {
-        "$": "pktqjizw"
+        "$": "7bqzobwl"
       }
     }
   }
