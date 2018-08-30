@@ -155,7 +155,7 @@ async function setPageEmulate(page: pd.TestPage) {
 
   const env = (process.env) as d.E2EProcessEnv;
 
-  const emulateJsonContent = env.STENCIL_EMULATE;
+  const emulateJsonContent = env.__STENCIL_EMULATE__;
   if (!emulateJsonContent) {
     return;
   }

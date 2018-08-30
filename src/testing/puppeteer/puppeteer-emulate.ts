@@ -61,5 +61,5 @@ export async function setScreenshotEmulateData(userEmulateConfig: d.ScreenshotEm
     screenshotEmulate.userAgent = userEmulateConfig.userAgent;
   }
 
-  env.STENCIL_EMULATE = JSON.stringify(screenshotEmulate);
+  env.__STENCIL_EMULATE__ = JSON.stringify(screenshotEmulate);
 }

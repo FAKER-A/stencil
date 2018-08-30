@@ -24,11 +24,11 @@ export interface JestEnvironmentGlobal {
 
 
 export interface E2EProcessEnv {
-  STENCIL_SNAPSHOT_ID?: string;
-  STENCIL_SNAPSHOT_DESC?: string;
-  STENCIL_SNAPSHOT_COMMIT_URL?: string;
-  STENCIL_EMULATE?: string;
+  STENCIL_COMMIT_ID?: string;
+  STENCIL_COMMIT_MESSAGE?: string;
+  STENCIL_REPO_URL?: string;
 
+  __STENCIL_EMULATE__?: string;
   __STENCIL_BROWSER_URL__?: string;
   __STENCIL_LOADER_SCRIPT_URL__?: string;
   __STENCIL_BROWSER_WS_ENDPOINT__?: string;

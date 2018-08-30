@@ -8,8 +8,8 @@ export interface E2EData {
 
 export interface E2ESnapshot {
   id: string;
-  desc?: string;
-  commitUrl?: string;
+  msg?: string;
+  repoUrl?: string;
   imagesDir?: string;
   dataDir?: string;
   appRootDir?: string;

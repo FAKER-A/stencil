@@ -7,7 +7,7 @@ import * as path from 'path';
 export async function startE2ESnapshot(config: d.Config) {
   const env = (process.env) as d.E2EProcessEnv;
 
-  const snapshotId = getSnapshotId();
+  const snapshotId = getSnapshotId(env);
   config.logger.debug(`test e2e snapshot id: ${snapshotId}`);
 
   const tmpDir = config.sys.details.tmpDir;
@@ -33,8 +33,8 @@ export async function startE2ESnapshot(config: d.Config) {
 
   const snapshot: d.E2ESnapshot = {
     id: snapshotId,
-    desc: env.STENCIL_SNAPSHOT_DESC || '',
-    commitUrl: env.STENCIL_SNAPSHOT_COMMIT_URL || '',
+    msg: getSnapshotMessage(env),
+    repoUrl: getRepoUrl(env),
     imagesDir: imagesDir,
     dataDir: dataDir,
     timestamp: Date.now()
@@ -55,19 +55,13 @@ export async function writeE2EScreenshot(screenshot: Buffer, uniqueDescription: 
     throw new Error(`writeE2EScreenshot, missing data directory env var`);
   }
 
-  if (typeof env.STENCIL_EMULATE !== 'string') {
+  if (typeof env.__STENCIL_EMULATE__ !== 'string') {
     throw new Error(`writeE2EScreenshot, missing screenshot emulate env var`);
   }
 
-  const hash = crypto.createHash('md5')
-                     .update(screenshot)
-                     .digest('base64');
+  const hash = crypto.createHash('md5').update(screenshot).digest('hex');
 
-  const cleanedHash = hash.replace(/\//g, '~')
-                          .replace(/\+/g, '_')
-                          .replace(/\=/g, '');
-
-  const imageName = `${cleanedHash}.png`;
+  const imageName = `${hash}.png`;
   const imagePath = path.join(env.__STENCIL_SCREENSHOT_IMAGES_DIR__, imageName);
 
   const imageExists = await fileExists(imagePath);
@@ -75,7 +69,7 @@ export async function writeE2EScreenshot(screenshot: Buffer, uniqueDescription: 
     await writeFile(imagePath, screenshot);
   }
 
-  const screenshotEmulate = JSON.parse(env.STENCIL_EMULATE) as d.ScreenshotEmulate;
+  const screenshotEmulate = JSON.parse(env.__STENCIL_EMULATE__) as d.ScreenshotEmulate;
 
   const id = getTestId(screenshotEmulate, uniqueDescription);
 
@@ -185,21 +179,40 @@ async function runScreenshotScreenshotConnector(config: d.Config, connectorModul
 }
 
 
-function getSnapshotId() {
-  let snapshotId = process.env.STENCIL_SNAPSHOT_ID;
-  if (typeof snapshotId === 'string' && snapshotId.length > 7) {
-    return snapshotId;
+function getSnapshotId(env: d.E2EProcessEnv) {
+  if (typeof env.STENCIL_COMMIT_ID === 'string' && env.STENCIL_COMMIT_ID.length > 3) {
+    return env.STENCIL_COMMIT_ID;
   }
 
-  snapshotId = crypto.createHash('md5')
-                     .update(Date.now().toString())
-                     .digest('hex')
-                     .substr(0, 8)
-                     .toLowerCase();
+  env.STENCIL_COMMIT_ID = crypto.createHash('md5')
+                          .update(Date.now().toString())
+                          .digest('hex')
+                          .substr(0, 8)
+                          .toLowerCase();
 
-  process.env.STENCIL_SNAPSHOT_ID = snapshotId;
+  return env.STENCIL_COMMIT_ID;
+}
 
-  return snapshotId;
+
+function getSnapshotMessage(env: d.E2EProcessEnv) {
+  if (typeof env.STENCIL_COMMIT_MESSAGE === 'string') {
+    return env.STENCIL_COMMIT_MESSAGE;
+  }
+
+  env.STENCIL_COMMIT_MESSAGE = '';
+
+  return env.STENCIL_COMMIT_MESSAGE;
+}
+
+
+function getRepoUrl(env: d.E2EProcessEnv) {
+  if (typeof env.STENCIL_REPO_URL === 'string') {
+    return env.STENCIL_REPO_URL;
+  }
+
+  env.STENCIL_REPO_URL = '';
+
+  return env.STENCIL_REPO_URL;
 }
 
 
