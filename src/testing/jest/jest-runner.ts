@@ -1,5 +1,6 @@
 import * as d from '../../declarations';
 import { normalizePath } from '../../compiler/util';
+import { setScreenshotEmulateData } from '../puppeteer/puppeteer-emulate';
 import * as cp from 'child_process';
 import * as path from 'path';
 
@@ -11,7 +12,6 @@ export async function runJest(config: d.Config, jestConfigPath: string, doScreen
 
       for (let i = 0; i < emulateDevices.length; i++) {
         const emulate = emulateDevices[i];
-
         await runJestDevice(config, jestConfigPath, emulate);
       }
 
@@ -23,7 +23,7 @@ export async function runJest(config: d.Config, jestConfigPath: string, doScreen
 }
 
 
-export async function runJestDevice(config: d.Config, jestConfigPath: string, emulate: d.ScreenshotEmulate) {
+export async function runJestDevice(config: d.Config, jestConfigPath: string, screenshotEmulate: d.ScreenshotEmulate) {
   const jestPkgJsonPath = config.sys.resolveModule(config.rootDir, 'jest');
   const jestPkgJson: d.PackageJsonData = require(jestPkgJsonPath);
   const jestBinModule = path.join(normalizePath(path.dirname(jestPkgJsonPath)), jestPkgJson.bin.jest);
@@ -42,14 +42,14 @@ export async function runJestDevice(config: d.Config, jestConfigPath: string, em
 
   return new Promise((resolve, reject) => {
 
-    const env = Object.assign({}, process.env as d.E2EProcessEnv);
-    if (emulate) {
-      env.STENCIL_EMULATE = JSON.stringify(emulate);
+    const jestProcessEnv = Object.assign({}, process.env as d.E2EProcessEnv);
+    if (screenshotEmulate) {
+      setScreenshotEmulateData(screenshotEmulate, jestProcessEnv);
     }
 
     const p = cp.fork(jestBinModule, args, {
       cwd: config.rootDir,
-      env: env
+      env: jestProcessEnv
     });
 
     p.on(`unhandledRejection`, (r: any) => {

@@ -47,6 +47,18 @@ export async function startE2ESnapshot(config: d.Config) {
 export async function writeE2EScreenshot(screenshot: Buffer, uniqueDescription: string) {
   const env = (process.env) as d.E2EProcessEnv;
 
+  if (typeof env.__STENCIL_SCREENSHOT_IMAGES_DIR__ !== 'string') {
+    throw new Error(`writeE2EScreenshot, missing images directory env var`);
+  }
+
+  if (typeof env.__STENCIL_SCREENSHOT_DATA_DIR__ !== 'string') {
+    throw new Error(`writeE2EScreenshot, missing data directory env var`);
+  }
+
+  if (typeof env.STENCIL_EMULATE !== 'string') {
+    throw new Error(`writeE2EScreenshot, missing screenshot emulate env var`);
+  }
+
   const hash = crypto.createHash('md5')
                      .update(screenshot)
                      .digest('base64');
@@ -63,15 +75,25 @@ export async function writeE2EScreenshot(screenshot: Buffer, uniqueDescription: 
     await writeFile(imagePath, screenshot);
   }
 
-  const id = getTestId(uniqueDescription);
+  const screenshotEmulate = JSON.parse(env.STENCIL_EMULATE) as d.ScreenshotEmulate;
+
+  const id = getTestId(screenshotEmulate, uniqueDescription);
+
   const dataName = `${id}.json`;
   const dataPath = path.join(env.__STENCIL_SCREENSHOT_DATA_DIR__, dataName);
 
   const screenshotData: d.E2EScreenshot = {
     id: id,
     desc: uniqueDescription,
-    hash: hash,
-    image: imageName
+    image: imageName,
+    device: screenshotEmulate.device,
+    width: screenshotEmulate.width,
+    height: screenshotEmulate.height,
+    deviceScaleFactor: screenshotEmulate.deviceScaleFactor,
+    hasTouch: screenshotEmulate.hasTouch,
+    isLandscape: screenshotEmulate.isLandscape,
+    isMobile: screenshotEmulate.isMobile,
+    mediaType: screenshotEmulate.mediaType
   };
 
   await writeFile(dataPath, JSON.stringify(screenshotData));
@@ -132,7 +154,7 @@ async function consolidateData(config: d.Config, results: d.E2ESnapshot) {
 
   const snapshotDataJsonFileName = `${results.id}.json`;
   const snapshotDataJsonFilePath = config.sys.path.join(results.dataDir, snapshotDataJsonFileName);
-  await config.sys.fs.writeFile(snapshotDataJsonFilePath, JSON.stringify(snapshot))
+  await config.sys.fs.writeFile(snapshotDataJsonFilePath, JSON.stringify(snapshot));
 
   return snapshot;
 }
@@ -149,7 +171,7 @@ async function runScreenshotScreenshotConnector(config: d.Config, connectorModul
 
       await connector.postSnapshot(snapshot);
 
-      timespan.finish(`updating screenshot data finished`);
+      timespan.finish(`update screenshot data finished`);
 
       if (typeof connector.startServer === 'function') {
         const server = await connector.startServer();
@@ -181,12 +203,23 @@ function getSnapshotId() {
 }
 
 
-function getTestId(uniqueDescription: string) {
-  return crypto.createHash('md5')
-               .update(uniqueDescription)
-               .digest('hex')
-               .substr(0, 8)
-               .toLowerCase();
+function getTestId(screenshotEmulate: d.ScreenshotEmulate, uniqueDescription: string) {
+  const hash = crypto.createHash('md5');
+
+  hash.update(uniqueDescription);
+
+  hash.update(screenshotEmulate.width.toString());
+  hash.update(screenshotEmulate.height.toString());
+  hash.update(screenshotEmulate.deviceScaleFactor.toString());
+  hash.update(screenshotEmulate.userAgent.toString());
+  hash.update(screenshotEmulate.hasTouch.toString());
+  hash.update(screenshotEmulate.isMobile.toString());
+
+  if (screenshotEmulate.mediaType != null) {
+    hash.update(screenshotEmulate.mediaType);
+  }
+
+  return hash.digest('hex').substr(0, 8).toLowerCase();
 }
 
 

@@ -25,7 +25,14 @@ export interface E2EScreenshot {
   id: string;
   desc: string;
   image: string;
-  hash?: string;
+  device?: string;
+  width?: number;
+  height?: number;
+  deviceScaleFactor?: number;
+  hasTouch?: boolean;
+  isLandscape?: boolean;
+  isMobile?: boolean;
+  mediaType?: string;
 }
 
 

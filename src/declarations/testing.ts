@@ -100,7 +100,7 @@ export interface ScreenshotEmulate {
   /**
    * Changes the CSS media type of the page. The only allowed values are 'screen', 'print' and null. Passing null disables media emulation.
    */
-  mediaType?: string;
+  mediaType?: 'screen' | 'print';
 }
 
 

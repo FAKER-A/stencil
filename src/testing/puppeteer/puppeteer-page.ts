@@ -18,7 +18,7 @@ export async function newTestPage(opts: pd.NewTestPageOptions = {}) {
 
   const page: pd.TestPage = await global.__NEW_TEST_PAGE__();
 
-  await setEmulate(page);
+  await setPageEmulate(page);
 
   await page.setCacheEnabled(false);
 
@@ -146,79 +146,44 @@ async function setTestContent(page: pd.TestPage, html: string) {
 }
 
 
-async function setEmulate(page: pd.TestPage) {
-  const env = (process.env) as d.E2EProcessEnv;
-
-  const emulateContent = env.STENCIL_EMULATE;
-  if (!emulateContent) {
-    return;
-  }
-
-  let emulate: d.ScreenshotEmulate;
-
+async function setPageEmulate(page: pd.TestPage) {
   try {
-    emulate = JSON.parse(emulateContent) as d.ScreenshotEmulate;
-
-  } catch (e) {
-    console.error('setEmulate', e);
-    return;
-  }
-
-  let emulateOptions: puppeteer.EmulateOptions = {
-    viewport: {
-      width: 800,
-      height: 600,
-      deviceScaleFactor: 1,
-      isMobile: false,
-      hasTouch: false,
-      isLandscape: false
-    }
-  };
-
-  if (typeof emulate.device === 'string') {
-    try {
-      const deviceDescriptors = require('puppeteer/DeviceDescriptors');
-
-      emulateOptions = deviceDescriptors[emulate.device] as puppeteer.EmulateOptions;
-      if (!emulateOptions) {
-        console.error(`invalid emulate device: ${emulate.device}`);
-        return;
-      }
-
-    } catch (e) {
-      console.error('error loading puppeteer DeviceDescriptors', e);
+    if (page.isClosed()) {
       return;
     }
+  } catch (e) {}
+
+  const env = (process.env) as d.E2EProcessEnv;
+
+  const emulateJsonContent = env.STENCIL_EMULATE;
+  if (!emulateJsonContent) {
+    return;
   }
 
-  if (typeof emulate.width === 'number') {
-    emulateOptions.viewport.width = emulate.width;
-  }
+  try {
+    const screenshotEmulate = JSON.parse(emulateJsonContent) as d.ScreenshotEmulate;
 
-  if (typeof emulate.height === 'number') {
-    emulateOptions.viewport.height = emulate.height;
-  }
+    const emulateOptions: puppeteer.EmulateOptions = {
+      viewport: {
+        width: screenshotEmulate.width,
+        height: screenshotEmulate.height,
+        deviceScaleFactor: screenshotEmulate.deviceScaleFactor,
+        isMobile: screenshotEmulate.isMobile,
+        hasTouch: screenshotEmulate.hasTouch,
+        isLandscape: screenshotEmulate.isLandscape
+      },
+      userAgent: screenshotEmulate.userAgent
+    };
 
-  if (typeof emulate.hasTouch === 'boolean') {
-    emulateOptions.viewport.hasTouch = emulate.hasTouch;
-  }
+    await page.emulate(emulateOptions);
 
-  if (typeof emulate.isLandscape === 'boolean') {
-    emulateOptions.viewport.isLandscape = emulate.isLandscape;
-  }
+    if (screenshotEmulate.mediaType) {
+      await page.emulateMedia(screenshotEmulate.mediaType);
+    }
 
-  if (typeof emulate.isMobile === 'boolean') {
-    emulateOptions.viewport.isMobile = emulate.isMobile;
-  }
-
-  if (typeof emulate.userAgent === 'string') {
-    emulateOptions.userAgent = emulate.userAgent;
-  }
-
-  await page.emulate(emulateOptions);
-
-  if (typeof emulate.mediaType === 'string' || emulate.mediaType === null) {
-    await page.emulateMedia(emulate.mediaType as any);
+  } catch (e) {
+    console.error('setPageEmulate', e);
+    await closePage(page);
   }
 }
 
