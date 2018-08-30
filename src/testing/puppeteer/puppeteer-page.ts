@@ -18,6 +18,8 @@ export async function newTestPage(opts: pd.NewTestPageOptions = {}) {
 
   const page: pd.TestPage = await global.__NEW_TEST_PAGE__();
 
+  await page.setCacheEnabled(false);
+
   await initPageEvents(page);
 
   initTestPageScreenshot(page);
@@ -28,6 +30,7 @@ export async function newTestPage(opts: pd.NewTestPageOptions = {}) {
 
   page.on('console', consoleMessage);
   page.on('pageerror', pageError);
+  page.on('requestfailed', requestFailed);
 
   if (typeof opts.html === 'string') {
     await setTestContent(page, opts.html);
@@ -164,4 +167,9 @@ function consoleMessage(c: puppeteer.ConsoleMessage) {
 
 function pageError(msg: string) {
   console.error('pageerror', msg);
+}
+
+
+function requestFailed(req: puppeteer.Request) {
+  console.error('requestfailed', req.url());
 }
