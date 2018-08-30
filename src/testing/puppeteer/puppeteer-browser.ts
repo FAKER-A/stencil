@@ -35,11 +35,23 @@ export async function connectBrowser() {
   }
 
   const connectOpts: puppeteer.ConnectOptions = {
-    browserWSEndpoint: env.__STENCIL_BROWSER_WS_ENDPOINT__,
+    browserWSEndpoint: wsEndpoint,
     ignoreHTTPSErrors: true
   };
 
   return await puppeteer.connect(connectOpts);
+}
+
+
+export async function disconnectBrowser(browser: puppeteer.Browser, pages: puppeteer.Page[]) {
+  if (Array.isArray(pages)) {
+    await Promise.all(pages.map(closePage));
+  }
+  if (browser) {
+    try {
+      browser.disconnect();
+    } catch (e) {}
+  }
 }
 
 
@@ -48,18 +60,10 @@ export function newBrowserPage(browser: puppeteer.Browser) {
 }
 
 
-export async function closeBrowser(browser: puppeteer.Browser, pages: puppeteer.Page[]) {
-  if (Array.isArray(pages)) {
-    await Promise.all(pages.map(closePage));
-  }
-  if (browser) {
-    await browser.close();
-  }
-}
-
-
 export async function closePage(page: puppeteer.Page) {
-  if (!page.isClosed()) {
-    await page.close();
-  }
+  try {
+    if (!page.isClosed()) {
+      await page.close();
+    }
+  } catch (e) {}
 }

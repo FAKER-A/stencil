@@ -72,15 +72,17 @@ async function gotoTest(page: pd.TestPage, url: string) {
   // resolves once the stencil app has finished loading
   const appLoaded = page.waitForFunction('window.stencilAppLoaded');
 
-  url = browserUrl + url.substring(1);
+  const fullUrl = browserUrl + url.substring(1);
 
+  let timedOut = false;
   try {
-    await page.goto(url, {
+    await page.goto(fullUrl, {
       waitUntil: 'load'
     });
 
     const tmr = setTimeout(async () => {
-      console.error(`app did not load: ${url}`);
+      timedOut = true;
+      console.error(`App did not load in allowed time. Please ensure the url ${url} loads a stencil application.`);
       await closePage(page);
     }, 4500);
 
@@ -89,8 +91,10 @@ async function gotoTest(page: pd.TestPage, url: string) {
     clearTimeout(tmr);
 
   } catch (e) {
-    console.error(`error goto: ${url}, ${e}`);
-    await closePage(page);
+    if (!timedOut) {
+      console.error(`error goto: ${url}, ${e}`);
+      await closePage(page);
+    }
   }
 }
 

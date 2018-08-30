@@ -1,5 +1,5 @@
 import * as d from '../../declarations';
-import { closeBrowser, connectBrowser, newBrowserPage } from '../puppeteer/puppeteer-browser';
+import { connectBrowser, disconnectBrowser, newBrowserPage } from '../puppeteer/puppeteer-browser';
 const NodeEnvironment = require('jest-environment-node');
 
 
@@ -37,7 +37,7 @@ export class JestEnvironment extends NodeEnvironment {
   async teardown() {
     await super.teardown();
 
-    await closeBrowser(this.browser, this.pages);
+    await disconnectBrowser(this.browser, this.pages);
 
     this.pages.length = 0;
 
