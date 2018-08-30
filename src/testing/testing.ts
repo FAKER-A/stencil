@@ -55,7 +55,7 @@ export class Testing implements d.Testing {
     }
     config.logger.info(config.logger.magenta(`testing ${msg.join(' and ')} files`));
 
-    let doScreenshots = !!(config.flags.e2e && config.flags.screenshot)
+    const doScreenshots = !!(config.flags.e2e && config.flags.screenshot);
     if (doScreenshots) {
       env.__STENCIL_SCREENSHOTS__ = 'true';
       config.logger.info(config.logger.magenta(`generating screenshots`));
@@ -91,7 +91,11 @@ export class Testing implements d.Testing {
       screenshotData = await startE2ESnapshot(config);
     }
 
-    await runJest(config, this.jestConfigPath);
+    try {
+      await runJest(config, this.jestConfigPath);
+    } catch (e) {
+      config.logger.error(e);
+    }
 
     if (doScreenshots) {
       await completeE2EScreenshots(config, screenshotData);

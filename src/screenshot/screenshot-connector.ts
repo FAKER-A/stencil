@@ -158,7 +158,7 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
   }
 
   async getAllSnapshotData() {
-    let snapshotJsonFileNames = await this.getSnapshotFileNames();
+    const snapshotJsonFileNames = await this.getSnapshotFileNames();
 
     const snapshotIds = snapshotJsonFileNames.filter(fileName => {
       return (fileName.endsWith('.json'));
@@ -263,7 +263,7 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
   }
 
   deleteDir(dirPath: string) {
-    return deleteDir(dirPath)
+    return deleteDir(dirPath);
   }
 
 }
@@ -275,7 +275,7 @@ function formatSnapshotData(results: d.E2ESnapshot) {
     commitUrl: results.commitUrl || '',
     timestamp: results.timestamp
   };
-  return snapshotData
+  return snapshotData;
 }
 
 function sortSnapshots(a: d.E2ESnapshot, b: d.E2ESnapshot) {

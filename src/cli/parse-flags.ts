@@ -4,18 +4,25 @@ import { dashToPascalCase } from '../util/helpers';
 
 export function parseFlags(process: NodeJS.Process): d.ConfigFlags {
   const flags: any = {
-    task: null
+    task: null,
+    args: []
   };
 
   // cmd line has more priority over npm scripts cmd
-  const cmdArgs = process.argv.slice(2);
-  if (cmdArgs.length > 0 && cmdArgs[0] && !cmdArgs[0].startsWith('-')) {
-    flags.task = cmdArgs[0];
+  flags.args = process.argv.slice(2);
+  if (flags.args.length > 0 && flags.args[0] && !flags.args[0].startsWith('-')) {
+    flags.task = flags.args[0];
   }
-  parseArgs(flags, cmdArgs);
+  parseArgs(flags, flags.args);
 
   const npmScriptCmdArgs = getNpmScriptArgs(process);
   parseArgs(flags, npmScriptCmdArgs);
+
+  npmScriptCmdArgs.forEach(npmArg => {
+    if (!flags.args.includes(npmArg)) {
+      flags.args.push(npmArg);
+    }
+  });
 
   return flags;
 }

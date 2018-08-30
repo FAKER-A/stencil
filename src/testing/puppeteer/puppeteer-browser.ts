@@ -46,3 +46,20 @@ export async function connectBrowser() {
 export function newBrowserPage(browser: puppeteer.Browser) {
   return browser.newPage();
 }
+
+
+export async function closeBrowser(browser: puppeteer.Browser, pages: puppeteer.Page[]) {
+  if (Array.isArray(pages)) {
+    await Promise.all(pages.map(closePage));
+  }
+  if (browser) {
+    await browser.close();
+  }
+}
+
+
+export async function closePage(page: puppeteer.Page) {
+  if (!page.isClosed()) {
+    await page.close();
+  }
+}

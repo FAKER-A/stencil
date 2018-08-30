@@ -8,7 +8,7 @@ import * as url from 'url';
 
 
 export async function startScreenshotServer(connector: d.ScreenshotConnector) {
-  let host = 'localhost';
+  const host = 'localhost';
   let port = 5543;
 
   port = await findClosestOpenPort(host, port);
@@ -129,9 +129,9 @@ function loadFile(pathname: string, res: http.ServerResponse) {
   if (pathname.endsWith('.css') || pathname.endsWith('.js')) {
     let contentType: string;
     if (pathname.endsWith('.css')) {
-      contentType = 'text/css'
+      contentType = 'text/css';
     } else if (pathname.endsWith('.js')) {
-      contentType = 'application/javascript'
+      contentType = 'application/javascript';
     }
 
     const appFile = normalizePath(path.join(__dirname, '..', '..', 'screenshot', 'app', pathname));

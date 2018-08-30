@@ -9,9 +9,14 @@ export async function runJest(config: d.Config, jestConfigPath: string) {
   const jestPkgJson: d.PackageJsonData = require(jestPkgJsonPath);
   const jestBinModule = path.join(normalizePath(path.dirname(jestPkgJsonPath)), jestPkgJson.bin.jest);
 
-  const args = process.argv.slice(2);
+  const args = [
+    '--config', jestConfigPath,
+    ...getJestArgs(config)
+  ];
 
-  args.push('--config', jestConfigPath);
+  if (config.watch) {
+    args.push('--watch');
+  }
 
   config.logger.debug(`jest module: ${jestBinModule}`);
   config.logger.debug(`jest args: ${args.join(' ')}`);
@@ -21,8 +26,21 @@ export async function runJest(config: d.Config, jestConfigPath: string) {
       cwd: config.rootDir
     });
 
-    p.once('exit', () => resolve());
-    p.once('error', reject);
+    p.on(`unhandledRejection`, (r: any) => {
+      reject(r);
+    });
+
+    p.once('exit', () => {
+      resolve();
+    });
+
+    p.once('error', err => {
+      if (err && err.message) {
+        config.logger.error(err.message);
+      }
+      resolve();
+    });
+
   });
 }
 
@@ -44,3 +62,74 @@ export async function setupJestConfig(config: d.Config) {
 
 
 const STENCIL_JEST_CONFIG = '.stencil.jest.config.json';
+
+
+function getJestArgs(config: d.Config) {
+  const args: string[] = [];
+
+  if (config.flags && config.flags.args) {
+    config.flags.args.forEach(arg => {
+      if (JEST_ARGS.includes(arg)) {
+        args.push(arg);
+      } else if (JEST_ARGS.some(jestArg => arg.startsWith(jestArg))) {
+        args.push(arg);
+      }
+    });
+  }
+
+  if (config.logger.level === 'debug') {
+    if (!args.includes('--detectOpenHandles')) {
+      args.push('--detectOpenHandles');
+    }
+  }
+
+  return args;
+}
+
+const JEST_ARGS = [
+  '--bail',
+  '--cache',
+  '--changedFilesWithAncestor',
+  '--changedSince',
+  '--ci',
+  '--clearCache',
+  '--collectCoverageFrom=',
+  '--colors',
+  '--config=',
+  '--coverage',
+  '--debug',
+  '--detectOpenHandles',
+  '--env=',
+  '--errorOnDeprecated',
+  '--expand',
+  '--findRelatedTests',
+  '--forceExit',
+  '--help',
+  '--init',
+  '--json',
+  '--outputFile=',
+  '--lastCommit',
+  '--listTests',
+  '--logHeapUsage',
+  '--maxWorkers=',
+  '--noStackTrace',
+  '--notify',
+  '--onlyChanged',
+  '--passWithNoTests',
+  '--reporters',
+  '--runInBand',
+  '--setupTestFrameworkScriptFile=',
+  '--showConfig',
+  '--silent',
+  '--testNamePattern=',
+  '--testLocationInResults',
+  '--testPathPattern=',
+  '--testRunner=',
+  '--updateSnapshot',
+  '--useStderr',
+  '--verbose',
+  '--version',
+  '--watch',
+  '--watchAll',
+  '--watchman',
+];
