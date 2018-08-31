@@ -118,7 +118,12 @@ async function openScreenshotCompareApp(config: d.Config, connector: d.Screensho
 
   const masterSnapshot = await connector.getMasterSnapshot();
   if (masterSnapshot) {
-    url = server.getCompareUrl(masterSnapshot.id, snapshot.id);
+
+    if (masterSnapshot.id !== snapshot.id) {
+      url = server.getCompareUrl(masterSnapshot.id, snapshot.id);
+    } else {
+      url = server.getSnapshotUrl(snapshot.id);
+    }
 
   } else {
     url = server.getRootUrl();
@@ -249,11 +254,16 @@ function getSnapshotId(env: d.E2EProcessEnv) {
     return env.STENCIL_COMMIT_ID;
   }
 
-  env.STENCIL_COMMIT_ID = crypto.createHash('md5')
-                          .update(Date.now().toString())
-                          .digest('hex')
-                          .substr(0, 8)
-                          .toLowerCase();
+  const d = new Date();
+
+  let fmDt = (d.getUTCFullYear() + '');
+  fmDt += ('0' + (d.getUTCMonth() + 1)).slice(-2);
+  fmDt += ('0' + d.getUTCDate()).slice(-2);
+  fmDt += ('0' + d.getUTCHours()).slice(-2);
+  fmDt += ('0' + d.getUTCMinutes()).slice(-2);
+  fmDt += ('0' + d.getUTCSeconds()).slice(-2);
+
+  env.STENCIL_COMMIT_ID = fmDt;
 
   return env.STENCIL_COMMIT_ID;
 }

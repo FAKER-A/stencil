@@ -50,5 +50,6 @@ export interface ScreenshotServer {
   start(connector: ScreenshotConnector): Promise<void>;
   getRootUrl(): string;
   getCompareUrl(snapshotIdA: string, snapshotIdB: string): string;
+  getSnapshotUrl(snapshotId: string): string;
   isListening(): boolean;
 }

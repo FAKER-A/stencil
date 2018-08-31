@@ -41,6 +41,10 @@ export class ScreenshotServer implements d.ScreenshotServer {
     return this._url + `${snapshotIdA}/${snapshotIdB}`;
   }
 
+  getSnapshotUrl(snapshotId: string) {
+    return this._url + snapshotId;
+  }
+
   isListening() {
     return this._isListening;
   }
