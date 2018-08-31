@@ -161,7 +161,7 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     });
 
     const snapshots = snapshotIds.map(async snapshotId => {
-      return await this.getSnapshotData(snapshotId);
+      return await this.getSnapshot(snapshotId);
     });
 
     return Promise.all(snapshots);
@@ -171,7 +171,21 @@ export class ScreenshotConnector implements d.ScreenshotConnector {
     return await this.readDir(this.snapshotDataDir);
   }
 
-  async getSnapshotData(snapshotId: string) {
+  async getMasterSnapshot() {
+    let masterSnapshot: d.E2ESnapshot = null;
+
+    try {
+      const data = await this.getData();
+      if (data && data.masterSnapshotId) {
+        masterSnapshot = await this.getSnapshot(data.masterSnapshotId);
+      }
+
+    } catch (e) {}
+
+    return masterSnapshot;
+  }
+
+  async getSnapshot(snapshotId: string) {
     let snapshotJsonContent: string;
     const snapshotJsonFileName = `${snapshotId}.json`;
 

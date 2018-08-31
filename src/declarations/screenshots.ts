@@ -38,7 +38,8 @@ export interface E2EScreenshot {
 export interface ScreenshotConnector {
   deleteSnapshot(snapshotId: string): Promise<E2EData>;
   getData(): Promise<E2EData>;
-  getSnapshotData(snapshotId: string): Promise<E2ESnapshot>;
+  getMasterSnapshot(): Promise<E2ESnapshot>;
+  getSnapshot(snapshotId: string): Promise<E2ESnapshot>;
   postSnapshot(snapshot: E2ESnapshot): Promise<void>;
   readImage(imageFileName: string): any;
   setMasterSnapshot(snapshotId: string): Promise<E2EData>;
@@ -46,7 +47,8 @@ export interface ScreenshotConnector {
 
 
 export interface ScreenshotServer {
-  start(connector: ScreenshotConnector): Promise<{
-    url: string;
-  }>;
+  start(connector: ScreenshotConnector): Promise<void>;
+  getRootUrl(): string;
+  getCompareUrl(snapshotIdA: string, snapshotIdB: string): string;
+  isListening(): boolean;
 }

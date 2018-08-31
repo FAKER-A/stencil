@@ -8,6 +8,8 @@ import * as url from 'url';
 
 
 export class ScreenshotServer implements d.ScreenshotServer {
+  private _url: string = null;
+  private _isListening = false;
 
   async start(connector: d.ScreenshotConnector) {
     const host = 'localhost';
@@ -20,14 +22,27 @@ export class ScreenshotServer implements d.ScreenshotServer {
     const server = http.createServer(reqHandler);
 
     process.once('SIGINT', () => {
+      this._isListening = false;
       server.close();
     });
 
     server.listen(port, host);
 
-    return {
-      url: `http://${host}:${port}/`
-    };
+    this._isListening = true;
+
+    this._url = `http://${host}:${port}/`;
+  }
+
+  getRootUrl() {
+    return this._url;
+  }
+
+  getCompareUrl(snapshotIdA: string, snapshotIdB: string) {
+    return this._url + `${snapshotIdA}/${snapshotIdB}`;
+  }
+
+  isListening() {
+    return this._isListening;
   }
 
 }
@@ -118,7 +133,7 @@ async function loadJson(connector: d.ScreenshotConnector, pathname: string, res:
   if (fileName === 'data.json') {
     data = await connector.getData();
   } else {
-    data = await connector.getSnapshotData(fileName.split('.')[0]);
+    data = await connector.getSnapshot(fileName.split('.')[0]);
   }
 
   res.writeHead(200, Object.assign({'Content-Type': 'application/json'}, DEFAULT_HEADERS));

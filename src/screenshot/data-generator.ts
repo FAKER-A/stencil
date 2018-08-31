@@ -101,10 +101,32 @@ export async function completeE2EScreenshots(config: d.Config, env: d.E2EProcess
 
     const connector = await runScreenshotConnector(config, env, snapshot);
 
-    await runScreenshotServer(config, env, connector);
+    const server = await runScreenshotServer(config, env, connector);
+
+    if (snapshot && connector && server && server.isListening()) {
+      await openScreenshotCompareApp(config, connector, server, snapshot);
+    }
 
   } catch (e) {
     config.logger.error(`completeE2EScreenshots, ${e}`);
+  }
+}
+
+
+async function openScreenshotCompareApp(config: d.Config, connector: d.ScreenshotConnector, server: d.ScreenshotServer, snapshot: d.E2ESnapshot) {
+  let url: string;
+
+  const masterSnapshot = await connector.getMasterSnapshot();
+  if (masterSnapshot) {
+    url = server.getCompareUrl(masterSnapshot.id, snapshot.id);
+
+  } else {
+    url = server.getRootUrl();
+  }
+
+  if (url) {
+    config.logger.info(`screenshots: ${config.logger.magenta(url)}`);
+    config.sys.open(url);
   }
 }
 
@@ -193,8 +215,10 @@ async function runScreenshotConnector(config: d.Config, env: d.E2EProcessEnv, sn
 
 
 async function runScreenshotServer(config: d.Config, env: d.E2EProcessEnv, connector: d.ScreenshotConnector) {
+  let server: d.ScreenshotServer = null;
+
   if (!connector || !config.flags.compare) {
-    return;
+    return server;
   }
 
   let serverModulePath = env.STENCIL_SCREENSHOT_SERVER;
@@ -208,16 +232,15 @@ async function runScreenshotServer(config: d.Config, env: d.E2EProcessEnv, conne
   try {
     const ScreenshotServer = require(serverModulePath);
 
-    const server: d.ScreenshotServer = new ScreenshotServer();
+    server = new ScreenshotServer();
 
-    const serverInfo = await server.start(connector);
-    config.logger.info(`screenshots: ${config.logger.magenta(serverInfo.url)}`);
-
-    config.sys.open(serverInfo.url);
+    await server.start(connector);
 
   } catch (e) {
     config.logger.error(`error running screenshot server: ${serverModulePath}, ${e}`);
   }
+
+  return server;
 }
 
 
